@@ -81,7 +81,15 @@ export default async function ProfessoresPage() {
       />
 
       <Card className="p-5">
-        <h2 className="text-sm font-semibold text-slate-900">
+        <h2 className="text-sm font-semibold text-slate-900">Como o professor acessa</h2>
+        <div className="mt-2 rounded-xl bg-amber-50 px-3.5 py-3 text-[11px] leading-relaxed text-amber-900 ring-1 ring-amber-200">
+          O professor <strong>não usa e-mail nem senha</strong>. O e-mail do cadastro serve apenas
+          para contato. O acesso é por um <strong>link pessoal</strong>{" "}
+          (<code>/professor/&lt;código&gt;</code>), copiado no botão{" "}
+          <strong>🔗 Copiar link</strong> ao lado do nome — envie por WhatsApp. O botão{" "}
+          <strong>↻</strong> renova o link e invalida o anterior.
+        </div>
+        <h2 className="mt-5 text-sm font-semibold text-slate-900">
           Como a agenda do professor funciona
         </h2>
         <div className="mt-3 grid gap-4 lg:grid-cols-3">
@@ -95,8 +103,10 @@ export default async function ProfessoresPage() {
           <div className="rounded-xl bg-slate-50 p-3.5 ring-1 ring-slate-200">
             <p className="text-xs font-semibold text-slate-800">2. O professor acompanha</p>
             <p className="mt-1 text-[11px] leading-relaxed text-slate-600">
-              Cada professor tem sua página de agenda com semana, próximos compromissos e histórico —
-              somente leitura, sem risco de alterar a agenda da direção.
+              Cada professor tem sua página com <strong>duas seções</strong>: a{" "}
+              <strong>sua agenda</strong> (convocações nominais) e a{" "}
+              <strong>agenda da escola</strong> (compromissos coletivos da gestão). A agenda de outro
+              professor nunca é exibida. Somente leitura.
             </p>
           </div>
           <div className="rounded-xl bg-slate-50 p-3.5 ring-1 ring-slate-200">

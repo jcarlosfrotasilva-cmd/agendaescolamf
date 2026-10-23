@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { TIPOS_DOCENTES, TURNOS, tipoInfo } from "@/lib/constants";
 import { Field, inputClass, selectClass } from "./ui";
 
@@ -39,20 +39,54 @@ export function ProfessorManager({ professores }: { professores: ProfessorItem[]
   const [ocupado, setOcupado] = useState(false);
   const [copiado, setCopiado] = useState<number | null>(null);
   const [links, setLinks] = useState<Record<number, string>>({});
+  const [aviso, setAviso] = useState<string | null>(null);
   const editando = form.id > 0;
+
+  // `window` não existe no servidor: a origem é definida após a montagem.
+  const [origem, setOrigem] = useState("");
+  useEffect(() => {
+    setOrigem(globalThis.location.origin);
+  }, []);
 
   const linkDoProfessor = (item: ProfessorItem) => {
     const token = links[item.id] ?? item.tokenAcesso;
-    return token ? `${globalThis.location.origin}/professor/${token}` : null;
+    if (!token) return null;
+    // Enquanto a origem não é conhecida, mostra o caminho relativo.
+    return `${origem}/professor/${token}`;
   };
 
+  /**
+   * Copia o link existente. Só gera um token novo quando ainda não existe, ou
+   * quando o administrador confirma a renovação (que invalida o link anterior).
+   */
   async function gerarLink(item: ProfessorItem, renovar = false) {
+    const tokenAtual = links[item.id] ?? item.tokenAcesso;
+    if (tokenAtual && !renovar) {
+      const completo = `${globalThis.location.origin}/professor/${tokenAtual}`;
+      try {
+        await navigator.clipboard.writeText(completo);
+        setCopiado(item.id);
+        setAviso(`Link copiado: ${completo}`);
+        globalThis.setTimeout(() => setCopiado(null), 3000);
+      } catch {
+        setAviso(`Copie manualmente: ${completo}`);
+      }
+      return;
+    }
+
+    if (renovar && tokenAtual) {
+      const confirmar = globalThis.confirm(
+        "Gerar um NOVO link invalida o link anterior. O professor precisará do novo endereço. Continuar?",
+      );
+      if (!confirmar) return;
+    }
+
     setOcupado(true);
     setErro(null);
     const res = await fetch(`/api/professores/${item.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ renovar }),
+      body: JSON.stringify({ renovar: Boolean(renovar) }),
     });
     const data = (await res.json()) as { ok: boolean; caminho?: string; error?: string };
     setOcupado(false);
@@ -65,9 +99,10 @@ export function ProfessorManager({ professores }: { professores: ProfessorItem[]
     try {
       await navigator.clipboard.writeText(completo);
       setCopiado(item.id);
+      setAviso(`Link ${renovar ? "renovado" : "gerado"} e copiado: ${completo}`);
       globalThis.setTimeout(() => setCopiado(null), 3000);
     } catch {
-      setErro("Link gerado. Copie manualmente: " + completo);
+      setAviso(`Link ${renovar ? "renovado" : "gerado"}. Copie manualmente: ${completo}`);
     }
     router.refresh();
   }
@@ -299,6 +334,19 @@ export function ProfessorManager({ professores }: { professores: ProfessorItem[]
       </form>
 
       <div className="space-y-4">
+        {aviso ? (
+          <div className="rounded-xl bg-indigo-50 px-3.5 py-2.5 text-[11px] font-medium leading-relaxed text-indigo-800 ring-1 ring-indigo-200">
+            {aviso}
+            <button
+              type="button"
+              onClick={() => setAviso(null)}
+              className="ml-2 font-bold text-indigo-600 hover:text-indigo-800"
+            >
+              ✕
+            </button>
+          </div>
+        ) : null}
+
         {TURNOS.map((turno) => {
           const doTurno = professores.filter((p) => p.turno === turno.key);
           if (doTurno.length === 0 && professores.length > 0) return null;
@@ -371,12 +419,23 @@ export function ProfessorManager({ professores }: { professores: ProfessorItem[]
                         <button
                           type="button"
                           disabled={ocupado}
-                          onClick={() => void gerarLink(p, Boolean(p.tokenAcesso))}
-                          title="Gera (ou renova) o link pessoal de leitura da agenda do professor"
+                          onClick={() => void gerarLink(p, false)}
+                          title="Copia o link pessoal de leitura da agenda do professor (não invalida o atual)"
                           className="rounded-lg bg-indigo-50 px-2.5 py-1.5 text-[11px] font-semibold text-indigo-700 ring-1 ring-indigo-200 hover:bg-indigo-100 disabled:opacity-60"
                         >
-                          {p.tokenAcesso ? "🔗 Link de acesso" : "🔗 Gerar link"}
+                          {p.tokenAcesso ? "🔗 Copiar link" : "🔗 Gerar link"}
                         </button>
+                        {p.tokenAcesso ? (
+                          <button
+                            type="button"
+                            disabled={ocupado}
+                            onClick={() => void gerarLink(p, true)}
+                            title="Gera um novo link e invalida o anterior"
+                            className="rounded-lg bg-white px-2 py-1.5 text-[10px] font-semibold text-rose-600 ring-1 ring-rose-200 hover:bg-rose-50 disabled:opacity-60"
+                          >
+                            ↻
+                          </button>
+                        ) : null}
                         {p.telefone ? (
                           <button
                             type="button"

@@ -12,7 +12,7 @@ import {
   type Gestor,
   type Professor,
 } from "@/db/schema";
-import { isoToday, rangeForPeriodo } from "./datetime";
+import { addDays, isoToday, rangeForPeriodo } from "./datetime";
 
 export type CompromissoComGestor = Compromisso & {
   gestorNome: string | null;
@@ -401,6 +401,51 @@ export async function idsProfessoresDoCompromisso(compromissoId: number) {
     .from(compromissoProfessores)
     .where(eq(compromissoProfessores.compromissoId, compromissoId));
   return rows.map((r) => r.professorId);
+}
+
+/**
+ * AGENDA DA ESCOLA PARA O PROFESSOR
+ * Compromissos coletivos da gestão que qualquer docente pode consultar:
+ * eventos, reuniões colegiadas, formações abertas, reuniões de pais, conselhos
+ * de classe e visitas — sempre SEM convocação nominal de outro professor.
+ * Isso preserva a privacidade: o docente vê a escola e a própria agenda.
+ */
+export async function listarAgendaDaEscola(limiteDias = 120) {
+  const hoje = isoToday();
+  const ate = addDays(hoje, limiteDias);
+
+  const rows = await db
+    .select({
+      compromisso: compromissos,
+      gestorNome: gestores.nome,
+      gestorCargo: gestores.cargo,
+      gestorTelefone: gestores.telefone,
+      totalConvocados: sql<number>`(
+        select count(*)::int from ${compromissoProfessores} cp
+        where cp.compromisso_id = ${compromissos.id}
+      )`,
+    })
+    .from(compromissos)
+    .leftJoin(gestores, eq(compromissos.gestorId, gestores.id))
+    .where(
+      and(
+        gte(compromissos.dataInicio, addDays(hoje, -7)),
+        lte(compromissos.dataInicio, ate),
+        sql`${compromissos.status} <> 'CANCELADO'`,
+      ),
+    )
+    .orderBy(asc(compromissos.dataInicio), asc(compromissos.horaInicio))
+    .limit(400);
+
+  // Somente compromissos sem convocação nominal (agenda institucional).
+  return rows
+    .filter((r) => r.totalConvocados === 0)
+    .map((r) => ({
+      ...r.compromisso,
+      gestorNome: r.gestorNome ?? null,
+      gestorCargo: r.gestorCargo ?? null,
+      gestorTelefone: r.gestorTelefone ?? null,
+    }));
 }
 
 /** Sincroniza as convocações de professores de um compromisso. */
