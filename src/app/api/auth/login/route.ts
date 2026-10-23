@@ -12,6 +12,7 @@ import {
   verificarSenha,
 } from "@/lib/auth";
 import { registrarAuditoria } from "@/lib/repo";
+import { configuracaoAusente } from "@/db";
 import { validarSenhaForte } from "@/lib/senha";
 import { explicarErroBanco } from "@/lib/db-diagnostico";
 
@@ -29,6 +30,21 @@ export async function POST(request: NextRequest) {
       nome?: string;
       primeiroAcesso?: boolean;
     };
+
+    if (configuracaoAusente) {
+      return json(
+        {
+          ok: false,
+          codigo: "SEM_CONFIGURACAO",
+          error:
+            "O sistema ainda não está conectado ao banco de dados. Rode no terminal do projeto: " +
+            'node scripts/configurar-banco.mjs "postgresql://..." usando a connection string do ' +
+            "Supabase (porta 6543) e reinicie o servidor.",
+          diagnostico: "/diagnostico",
+        },
+        { status: 503 },
+      );
+    }
 
     const email = (body.email ?? "").trim().toLowerCase();
     const senha = body.senha ?? "";

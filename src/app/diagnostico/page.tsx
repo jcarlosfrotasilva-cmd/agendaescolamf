@@ -97,6 +97,44 @@ export default async function DiagnosticoPage() {
           ))}
         </div>
 
+        {!banco.configurado || banco.origemConfiguracao === "nenhuma" ? (
+          <Card className="p-5">
+            <h2 className="text-sm font-semibold text-slate-900">
+              Configuração do banco não encontrada
+            </h2>
+            <p className="mt-1 text-xs leading-relaxed text-slate-600">
+              A aplicação não encontrou <code>SUPABASE_DB_URL</code>. Sem ela, tenta o PostgreSQL
+              local padrão e falha com “o banco de dados não respondeu”. Rode o configurador no
+              terminal do projeto — ele grava os arquivos e testa a conexão:
+            </p>
+            <div className="mt-3">
+              <CopyBlock
+                titulo="terminal (na pasta do projeto)"
+                linhas={3}
+                conteudo={'node scripts/configurar-banco.mjs "postgresql://postgres.PROJETO:SENHA@aws-0-REGIAO.pooler.supabase.com:6543/postgres"'}
+              />
+            </div>
+            <p className="mt-2 text-[11px] text-slate-500">
+              Ou crie manualmente o arquivo <code>config/producao.json</code>:
+            </p>
+            <div className="mt-2">
+              <CopyBlock
+                titulo="config/producao.json"
+                linhas={8}
+                conteudo={`{
+  "SUPABASE_DB_URL": "postgresql://postgres.PROJETO:SENHA@aws-0-REGIAO.pooler.supabase.com:6543/postgres",
+  "SESSION_SECRET": "gere com: openssl rand -hex 32",
+  "NEXT_PUBLIC_ESCOLA_NOME": "EE PROFA. MARLENE FRATTINI"
+}`}
+              />
+            </div>
+            <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-[11px] leading-relaxed text-amber-800 ring-1 ring-amber-200">
+              Por conter senha, esse arquivo é ignorado pelo Git: ao clonar ou atualizar o projeto em
+              outra máquina, ele precisa ser criado novamente com o comando acima.
+            </p>
+          </Card>
+        ) : null}
+
         {!pronto ? (
           <Card className="p-5">
             <h2 className="text-sm font-semibold text-slate-900">Como resolver</h2>

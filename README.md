@@ -30,6 +30,29 @@ O sistema conecta-se **apenas pelo servidor** à connection string do Supabase.
 > A base inicia **sem dados de demonstração** — nenhum compromisso ou gestor fictício é criado.
 > O script de estrutura já encerra com comandos de limpeza comentados/explicitados para reinício.
 
+## Erro "o banco de dados não respondeu" (na sua máquina)
+
+Esse aviso aparece quando a aplicação local não encontra `SUPABASE_DB_URL` e tenta o
+PostgreSQL local (`DATABASE_URL`), que normalmente não está rodando. O arquivo
+`config/producao.json` contém a senha do banco e por isso é ignorado pelo Git: ao clonar
+ou atualizar o projeto em outra máquina, ele **não vem junto**.
+
+Corrija com um comando, na pasta do projeto:
+
+```bash
+node scripts/configurar-banco.mjs "postgresql://postgres.PROJETO:SENHA@aws-0-REGIAO.pooler.supabase.com:6543/postgres"
+```
+
+O script:
+1. converte automaticamente a porta 5432 para **6543** (transaction pooler);
+2. testa a conexão, confere as 8 tabelas e conta os usuários;
+3. grava `config/producao.json` e `.env.local` (com `SESSION_SECRET` gerado) somente se o teste passar.
+
+Para apenas conferir a configuração atual: `node scripts/configurar-banco.mjs --testar`.
+
+A aplicação **não cai** quando a configuração está ausente: ela responde em `/diagnostico`
+com o comando exato a executar e devolve mensagem clara no login (código `SEM_CONFIGURACAO`).
+
 ## Login: diagnóstico de falhas
 
 Sintomas e causas tratadas pelo sistema:

@@ -1,7 +1,12 @@
 import { sql } from "drizzle-orm";
-import { db, databaseHost, isLocalDatabase, isSupabase } from "@/db";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import {
+  configuracaoAusente,
+  db,
+  databaseHost,
+  isLocalDatabase,
+  isSupabase,
+  origemDaConfiguracao,
+} from "@/db";
 
 export type DiagnosticoBanco = {
   configurado: boolean;
@@ -60,7 +65,8 @@ export function explicarErroBanco(erro: unknown): { codigo?: string; dica: strin
     return {
       codigo: "ECONNREFUSED",
       dica:
-        "Não há banco de dados atendendo no endereço configurado. No seu computador, inicie o PostgreSQL local ou configure a SUPABASE_DB_URL no arquivo .env.local.",
+        "Não há banco respondendo no endereço configurado. Se estiver na sua máquina, rode: " +
+        'node scripts/configurar-banco.mjs "postgresql://...", usando a connection string do Supabase na porta 6543.',
     };
   }
   if (codigo === "42P01" || /relation .* does not exist/i.test(mensagem)) {
@@ -110,15 +116,10 @@ export function explicarErroBanco(erro: unknown): { codigo?: string; dica: strin
   };
 }
 
-function origemDaConfiguracao(): DiagnosticoBanco["origemConfiguracao"] {
-  if (process.env.SUPABASE_DB_URL) return "env";
-  try {
-    const bruto = readFileSync(join(process.cwd(), "config", "producao.json"), "utf8");
-    const dados = JSON.parse(bruto) as Record<string, string>;
-    if (dados.SUPABASE_DB_URL) return "arquivo-producao";
-  } catch {
-    /* sem arquivo */
-  }
+function origemConfiguracao(): DiagnosticoBanco["origemConfiguracao"] {
+  const origem = origemDaConfiguracao();
+  if (origem === "arquivo-producao") return "arquivo-producao";
+  if (origem === "env") return "env";
   return "nenhuma";
 }
 
@@ -126,7 +127,7 @@ function origemDaConfiguracao(): DiagnosticoBanco["origemConfiguracao"] {
 export async function diagnosticarBanco(): Promise<DiagnosticoBanco> {
   const base: DiagnosticoBanco = {
     configurado: Boolean(databaseHost() && databaseHost() !== "indefinido"),
-    origemConfiguracao: origemDaConfiguracao(),
+    origemConfiguracao: origemConfiguracao(),
     host: databaseHost(),
     provedor: isSupabase() ? "supabase" : isLocalDatabase() ? "local" : "postgres-externo",
     conectado: false,
@@ -134,6 +135,17 @@ export async function diagnosticarBanco(): Promise<DiagnosticoBanco> {
     tabelasFaltando: [],
     usuarios: 0,
   };
+
+  // Sem credencial do Supabase não há o que testar: devolve a orientação exata.
+  if (configuracaoAusente) {
+    base.configurado = false;
+    base.origemConfiguracao = "nenhuma";
+    base.host = "não configurado";
+    base.dica =
+      'Crie config/producao.json ou rode: node scripts/configurar-banco.mjs "postgresql://..." ' +
+      "com a connection string do Supabase (Project Settings → Database, porta 6543).";
+    return base;
+  }
 
   try {
     await db.execute(sql`select 1`);

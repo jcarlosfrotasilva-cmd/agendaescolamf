@@ -35,9 +35,21 @@ const databaseUrl =
   process.env.POSTGRES_URL ??
   "";
 
-if (!databaseUrl) {
-  throw new Error(
-    "Configuração ausente: defina SUPABASE_DB_URL ou DATABASE_URL com a connection string do PostgreSQL (Supabase).",
+/**
+ * A ausência de configuração NÃO pode derrubar o processo: o sistema continua
+ * no ar e explica o problema em /diagnostico. Sem isso, qualquer importação do
+ * módulo derrubaria todas as rotas com "Internal Server Error".
+ */
+export const configuracaoAusente = databaseUrl.length === 0;
+
+const urlEfetiva = configuracaoAusente
+  ? "postgresql://sem-configuracao:sem-configuracao@127.0.0.1:1/indisponivel"
+  : databaseUrl;
+
+if (configuracaoAusente) {
+  console.error(
+    "[db] SUPABASE_DB_URL ausente. Crie config/producao.json ou rode " +
+      'node scripts/configurar-banco.mjs "postgresql://..." — detalhes em /diagnostico.',
   );
 }
 
@@ -90,7 +102,7 @@ const globalForDb = globalThis as typeof globalThis & {
   __agendaEscolarPool?: Pool;
 };
 
-export const pool = globalForDb.__agendaEscolarPool ?? new Pool(buildConfig(databaseUrl));
+export const pool = globalForDb.__agendaEscolarPool ?? new Pool(buildConfig(urlEfetiva));
 
 // Um erro em conexão ociosa não pode derrubar o processo: o pool descarta a
 // conexão e a próxima consulta abre outra.
@@ -104,11 +116,27 @@ if (process.env.NODE_ENV !== "production") {
 
 export const db = drizzle(pool);
 
+/** De onde veio a credencial em uso — mostrado no diagnóstico. */
+export function origemDaConfiguracao(): "env" | "arquivo-producao" | "database-url" | "nenhuma" {
+  if (process.env.SUPABASE_DB_URL) return "env";
+  try {
+    const bruto = require("node:fs").readFileSync(
+      require("node:path").join(process.cwd(), "config", "producao.json"),
+      "utf8",
+    ) as string;
+    if (JSON.parse(bruto).SUPABASE_DB_URL) return "arquivo-producao";
+  } catch {
+    /* sem arquivo */
+  }
+  if (process.env.DATABASE_URL) return "database-url";
+  return "nenhuma";
+}
+
 /** Host do banco em uso (sem credenciais), útil para diagnóstico. */
 export function databaseHost(): string {
   try {
     const { hostname, port, pathname } = new URL(databaseUrl);
-    return `${hostname}${port ? `:${port}` : ""}${pathname}`;
+    return configuracaoAusente ? "não configurado" : `${hostname}${port ? `:${port}` : ""}${pathname}`;
   } catch {
     return "indefinido";
   }
