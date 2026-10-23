@@ -1,0 +1,8 @@
+{
+  "_comentario": "Copie para config/producao.json e preencha com os dados do seu projeto Supabase. Use a porta 6543 (transaction pooler).",
+  "SUPABASE_DB_URL": "postgresql://postgres.SEU_PROJETO:SUA_SENHA@aws-0-REGIAO.pooler.supabase.com:6543/postgres",
+  "SESSION_SECRET": "GERE_COM_openssl rand -hex 32",
+  "NEXT_PUBLIC_ESCOLA_NOME": "EE PROFA. MARLENE FRATTINI",
+  "NEXT_PUBLIC_ESCOLA_NOME_COMPLETO": "Escola Estadual Professora Marlene Frattini",
+  "NEXT_PUBLIC_ESCOLA_SIGLA": "EE PMF"
+}

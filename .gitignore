@@ -1,0 +1,17 @@
+# Dependências e build
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+
+# Segredos — NUNCA versionar
+.env
+.env.local
+.env.*.local
+config/producao.json
+
+# Sistema
+.DS_Store
+npm-debug.log*
+/tmp/
