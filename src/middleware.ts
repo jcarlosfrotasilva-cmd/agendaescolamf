@@ -9,6 +9,8 @@ import { COOKIE_SESSAO, verificarTokenSessao } from "@/lib/auth-edge";
  */
 const PUBLICAS = [
   "/entrar",
+  "/configurar",
+  "/api/configurar-banco",
   "/diagnostico",
   "/api/auth",
   "/api/health",

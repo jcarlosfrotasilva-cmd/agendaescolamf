@@ -271,6 +271,12 @@ export default async function DiagnosticoPage() {
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
             <Link
+              href="/configurar"
+              className="rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-emerald-700"
+            >
+              Configurar o banco pela interface
+            </Link>
+            <Link
               href="/entrar"
               className="rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-indigo-700"
             >

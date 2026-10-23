@@ -10,6 +10,7 @@ export function LoginForm({ primeiroAcesso }: { primeiroAcesso: boolean }) {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [erro, setErro] = useState<string | null>(null);
+  const [codigo, setCodigo] = useState<string | null>(null);
   const [entrando, setEntrando] = useState(false);
 
   const inputClass =
@@ -30,9 +31,14 @@ export function LoginForm({ primeiroAcesso }: { primeiroAcesso: boolean }) {
           primeiroAcesso,
         }),
       });
-      const data = (await res.json()) as { ok: boolean; error?: string };
+      const data = (await res.json()) as {
+        ok: boolean;
+        error?: string;
+        codigo?: string;
+      };
       if (!res.ok || !data.ok) {
         setErro(data.error ?? "Não foi possível entrar.");
+        setCodigo(data.codigo ?? null);
         setEntrando(false);
         return;
       }
@@ -103,7 +109,15 @@ export function LoginForm({ primeiroAcesso }: { primeiroAcesso: boolean }) {
       {erro ? (
         <div className="rounded-xl bg-rose-50 px-3.5 py-2.5 ring-1 ring-rose-200">
           <p className="text-xs font-medium leading-relaxed text-rose-700">{erro}</p>
-          {erro.includes("banco") || erro.includes("Não foi possível validar") ? (
+          {codigo === "SEM_CONFIGURACAO" ? (
+            <a
+              href="/configurar"
+              className="mt-2 inline-block rounded-lg bg-rose-600 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-rose-700"
+            >
+              Configurar o banco de dados agora →
+            </a>
+          ) : null}
+          {codigo === "SEM_CONFIGURACAO" || erro.includes("banco") || codigo?.includes("BANCO") ? (
             <a
               href="/diagnostico"
               className="mt-1.5 inline-block text-[11px] font-semibold text-rose-800 underline"

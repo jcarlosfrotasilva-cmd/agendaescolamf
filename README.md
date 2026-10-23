@@ -37,7 +37,13 @@ PostgreSQL local (`DATABASE_URL`), que normalmente não está rodando. O arquivo
 `config/producao.json` contém a senha do banco e por isso é ignorado pelo Git: ao clonar
 ou atualizar o projeto em outra máquina, ele **não vem junto**.
 
-Corrija com um comando, na pasta do projeto:
+**Duas formas de corrigir:**
+
+**A) Pela interface (sem terminal)** — abra `/configurar`, cole a connection string do Supabase,
+marque "criar tabelas automaticamente" e clique em testar. O sistema valida a conexão, cria a
+estrutura que faltar e grava a configuração. Depois reinicie o servidor.
+
+**B) Pelo terminal, na pasta do projeto:**
 
 ```bash
 node scripts/configurar-banco.mjs "postgresql://postgres.PROJETO:SENHA@aws-0-REGIAO.pooler.supabase.com:6543/postgres"
