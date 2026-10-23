@@ -34,7 +34,7 @@ const vazio = {
   ativo: true,
 };
 
-type Credenciais = { email: string; senha: string | null; nome: string };
+type Credenciais = { email: string; senha: string | null; nome: string; telefone: string | null };
 
 export function ProfessorManager({ professores }: { professores: ProfessorItem[] }) {
   const router = useRouter();
@@ -160,6 +160,7 @@ export function ProfessorManager({ professores }: { professores: ProfessorItem[]
         nome: item.nome,
         email: data.email ?? email,
         senha: data.senhaTemporaria ?? (senha.trim() || null),
+        telefone: item.telefone,
       });
       setAviso(data.mensagem ?? "Acesso criado/atualizado com sucesso.");
       router.refresh();
@@ -186,6 +187,33 @@ export function ProfessorManager({ professores }: { professores: ProfessorItem[]
     } catch {
       setErro("Não foi possível copiar automaticamente.");
     }
+  }
+
+  /** Abre o WhatsApp do professor com as credenciais prontas. */
+  function enviarCredenciaisWhatsApp() {
+    if (!credenciais) return;
+    const texto = [
+      "*AGENDA DA GESTÃO ESCOLAR*",
+      "EE PROFA. MARLENE FRATTINI",
+      "",
+      `Olá, ${credenciais.nome.split(" ")[0]}!`,
+      "Seu acesso à agenda escolar foi criado.",
+      "",
+      `🔗 Endereço: ${globalThis.location.origin}/entrar`,
+      `👤 E-mail: ${credenciais.email}`,
+      credenciais.senha ? `🔑 Senha: ${credenciais.senha}` : "",
+      "",
+      "Ao entrar, você verá a sua agenda e os compromissos coletivos da escola.",
+      "Recomendamos trocar a senha em “Minha senha”, no primeiro acesso.",
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    const numero = (credenciais.telefone ?? "").replace(/\D/g, "");
+    const link = numero
+      ? `https://wa.me/${numero.startsWith("55") ? numero : `55${numero}`}?text=${encodeURIComponent(texto)}`
+      : `https://wa.me/?text=${encodeURIComponent(texto)}`;
+    globalThis.open(link, "_blank", "noopener,noreferrer");
   }
 
   async function removerAcesso(item: ProfessorItem) {
@@ -368,13 +396,27 @@ export function ProfessorManager({ professores }: { professores: ProfessorItem[]
                 </dd>
               </div>
             </dl>
-            <button
-              type="button"
-              onClick={() => void copiarCredenciais()}
-              className="mt-3 rounded-lg bg-white px-3 py-2 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-50"
-            >
-              {copiaOk ? "✓ Copiado" : "📋 Copiar credenciais"}
-            </button>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => void copiarCredenciais()}
+                className="rounded-lg bg-white px-3 py-2 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-50"
+              >
+                {copiaOk ? "✓ Copiado" : "📋 Copiar credenciais"}
+              </button>
+              <button
+                type="button"
+                onClick={() => enviarCredenciaisWhatsApp()}
+                className="rounded-lg bg-[#25D366] px-3 py-2 text-[11px] font-semibold text-white hover:brightness-95"
+              >
+                📱 Enviar por WhatsApp
+              </button>
+            </div>
+            {!credenciais.telefone ? (
+              <p className="mt-2 text-[11px] text-emerald-100">
+                Sem WhatsApp cadastrado: o envio abrirá o WhatsApp sem destinatário definido.
+              </p>
+            ) : null}
             <p className="mt-2 rounded-lg bg-white/10 px-3 py-2 text-[11px] leading-relaxed text-emerald-50">
               {credenciais.senha
                 ? "A senha temporária é exibida apenas agora. O professor deve alterá-la em “Minha senha” após entrar."
@@ -455,6 +497,12 @@ export function ProfessorManager({ professores }: { professores: ProfessorItem[]
                               ? ` · último acesso ${new Date(p.ultimoAcesso).toLocaleString("pt-BR")}`
                               : ""}
                           </p>
+                          {p.temAcesso ? (
+                            <p className="mt-0.5 text-[10px] text-slate-400">
+                              A senha é criptografada (não pode ser lida). Para entregar ao
+                              professor, use “🔑 Redefinir acesso” e envie pelo WhatsApp.
+                            </p>
+                          ) : null}
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
