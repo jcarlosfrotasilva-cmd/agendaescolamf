@@ -76,7 +76,8 @@ export default async function ProfessoresPage() {
           observacoes: p.observacoes,
           ativo: p.ativo,
           totalCompromissos: p.totalCompromissos,
-          tokenAcesso: p.tokenAcesso,
+          temAcesso: p.temAcesso,
+          ultimoAcesso: p.ultimoAcesso ?? null,
         }))}
       />
 

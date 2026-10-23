@@ -3,11 +3,15 @@
  * A assinatura é HMAC-SHA256 sobre o payload em base64url.
  */
 
+export type PapelSessao = "ADMIN" | "GESTAO" | "LEITURA" | "PROFESSOR";
+
 export type PayloadSessao = {
   uid: number;
   nome: string;
   email: string;
-  papel: "ADMIN" | "GESTAO" | "LEITURA";
+  papel: PapelSessao;
+  /** Presente quando o usuário é professor: amarra a sessão à própria agenda. */
+  professorId?: number | null;
   exp: number;
 };
 

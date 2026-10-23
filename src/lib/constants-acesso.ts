@@ -1,5 +1,5 @@
 /** Perfis de acesso (compartilhado entre cliente e servidor, sem dependências). */
-export type PapelKey = "ADMIN" | "GESTAO" | "LEITURA";
+export type PapelKey = "ADMIN" | "GESTAO" | "LEITURA" | "PROFESSOR";
 
 export const PAPEIS: {
   key: PapelKey;
@@ -24,5 +24,11 @@ export const PAPEIS: {
     label: "Consulta (leitura)",
     descricao: "Apenas visualiza a agenda e os indicadores.",
     chip: "bg-slate-100 text-slate-600 ring-slate-300",
+  },
+  {
+    key: "PROFESSOR",
+    label: "Professor(a)",
+    descricao: "Acessa somente a própria agenda e os compromissos coletivos da escola.",
+    chip: "bg-teal-50 text-teal-700 ring-teal-200",
   },
 ];

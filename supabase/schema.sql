@@ -83,10 +83,11 @@ create table if not exists usuarios (
   senha_hash    text not null,
   papel         text not null default 'GESTAO',
   cargo         text,
+  professor_id  integer references professores(id) on delete cascade,
   ativo         boolean not null default true,
   ultimo_acesso timestamptz,
   criado_em     timestamptz not null default now(),
-  constraint usuarios_papel_check check (papel in ('ADMIN','GESTAO','LEITURA'))
+  constraint usuarios_papel_check check (papel in ('ADMIN','GESTAO','LEITURA','PROFESSOR'))
 );
 create index if not exists usuarios_email_idx on usuarios (email);
 

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { TIPOS_DOCENTES, TURNOS, tipoInfo } from "@/lib/constants";
 import { Field, inputClass, selectClass } from "./ui";
 
@@ -17,7 +17,9 @@ export type ProfessorItem = {
   observacoes: string | null;
   ativo: boolean;
   totalCompromissos: number;
-  tokenAcesso: string | null;
+  /** Login já criado? */
+  temAcesso: boolean;
+  ultimoAcesso: string | null;
 };
 
 const vazio = {
@@ -32,120 +34,18 @@ const vazio = {
   ativo: true,
 };
 
+type Credenciais = { email: string; senha: string | null; nome: string };
+
 export function ProfessorManager({ professores }: { professores: ProfessorItem[] }) {
   const router = useRouter();
   const [form, setForm] = useState({ ...vazio });
   const [erro, setErro] = useState<string | null>(null);
+  const [aviso, setAviso] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState(false);
   const [copiado, setCopiado] = useState<number | null>(null);
-  const [links, setLinks] = useState<Record<number, string>>({});
-  const [aviso, setAviso] = useState<string | null>(null);
+  const [credenciais, setCredenciais] = useState<Credenciais | null>(null);
+  const [copiaOk, setCopiaOk] = useState(false);
   const editando = form.id > 0;
-
-  // `window` não existe no servidor: a origem é definida após a montagem.
-  const [origem, setOrigem] = useState("");
-  useEffect(() => {
-    setOrigem(globalThis.location.origin);
-  }, []);
-
-  const linkDoProfessor = (item: ProfessorItem) => {
-    const token = links[item.id] ?? item.tokenAcesso;
-    if (!token) return null;
-    // Enquanto a origem não é conhecida, mostra o caminho relativo.
-    return `${origem}/professor/${token}`;
-  };
-
-  /**
-   * Copia o link existente. Só gera um token novo quando ainda não existe, ou
-   * quando o administrador confirma a renovação (que invalida o link anterior).
-   */
-  async function gerarLink(item: ProfessorItem, renovar = false) {
-    const tokenAtual = links[item.id] ?? item.tokenAcesso;
-    if (tokenAtual && !renovar) {
-      const completo = `${globalThis.location.origin}/professor/${tokenAtual}`;
-      try {
-        await navigator.clipboard.writeText(completo);
-        setCopiado(item.id);
-        setAviso(`Link copiado: ${completo}`);
-        globalThis.setTimeout(() => setCopiado(null), 3000);
-      } catch {
-        setAviso(`Copie manualmente: ${completo}`);
-      }
-      return;
-    }
-
-    if (renovar && tokenAtual) {
-      const confirmar = globalThis.confirm(
-        "Gerar um NOVO link invalida o link anterior. O professor precisará do novo endereço. Continuar?",
-      );
-      if (!confirmar) return;
-    }
-
-    setOcupado(true);
-    setErro(null);
-    const res = await fetch(`/api/professores/${item.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ renovar: Boolean(renovar) }),
-    });
-    const data = (await res.json()) as { ok: boolean; caminho?: string; error?: string };
-    setOcupado(false);
-    if (!res.ok || !data.ok) {
-      setErro(data.error ?? "Não foi possível gerar o link de acesso.");
-      return;
-    }
-    const completo = `${globalThis.location.origin}${data.caminho}`;
-    setLinks((prev) => ({ ...prev, [item.id]: data.caminho?.replace("/professor/", "") ?? "" }));
-    try {
-      await navigator.clipboard.writeText(completo);
-      setCopiado(item.id);
-      setAviso(`Link ${renovar ? "renovado" : "gerado"} e copiado: ${completo}`);
-      globalThis.setTimeout(() => setCopiado(null), 3000);
-    } catch {
-      setAviso(`Link ${renovar ? "renovado" : "gerado"}. Copie manualmente: ${completo}`);
-    }
-    router.refresh();
-  }
-
-  async function avisarProfessor(item: ProfessorItem, tipo: "CONVITE" | "LEMBRETE") {
-    if (!item.totalCompromissos) {
-      setErro("Este professor ainda não possui convocações na agenda.");
-      return;
-    }
-    const token = links[item.id] ?? item.tokenAcesso;
-    setOcupado(true);
-    const compromissos = await fetch(`/api/compromissos?professorId=${item.id}&periodo=PROXIMOS7`)
-      .then((r) => r.json() as Promise<{ itens?: { id: number }[] }>)
-      .catch(() => ({ itens: [] as { id: number }[] }));
-    const primeiro = compromissos.itens?.[0];
-    if (!primeiro) {
-      setOcupado(false);
-      setErro("Nenhum compromisso futuro do professor nos próximos 7 dias.");
-      return;
-    }
-    const texto = token
-      ? ` Olá! Sua agenda individual está em: ${globalThis.location.origin}/professor/${token}`
-      : "";
-    const res = await fetch("/api/whatsapp", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        compromissoId: primeiro.id,
-        destinoNome: item.nome,
-        telefone: item.telefone,
-        finalidade: tipo,
-        ...(texto ? { mensagem: undefined } : {}),
-      }),
-    });
-    const data = (await res.json()) as { ok: boolean; link?: string; error?: string };
-    setOcupado(false);
-    if (!res.ok || !data.ok) {
-      setErro(data.error ?? "Não foi possível preparar a mensagem.");
-      return;
-    }
-    if (data.link) globalThis.open(data.link, "_blank", "noopener,noreferrer");
-    router.refresh();
-  }
 
   async function salvar(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -173,10 +73,14 @@ export function ProfessorManager({ professores }: { professores: ProfessorItem[]
       return;
     }
     setForm({ ...vazio });
+    setAviso("Cadastro salvo. Crie o acesso do professor em “🔑 Criar acesso”.");
     router.refresh();
   }
 
   async function excluir(id: number) {
+    if (!globalThis.confirm("Excluir este professor? O login de acesso também será removido.")) {
+      return;
+    }
     setOcupado(true);
     await fetch(`/api/professores/${id}`, { method: "DELETE" });
     setOcupado(false);
@@ -185,6 +89,7 @@ export function ProfessorManager({ professores }: { professores: ProfessorItem[]
 
   function editar(item: ProfessorItem) {
     setErro(null);
+    setAviso(null);
     setForm({
       id: item.id,
       nome: item.nome,
@@ -199,10 +104,106 @@ export function ProfessorManager({ professores }: { professores: ProfessorItem[]
     globalThis.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  async function copiarLink(item: ProfessorItem) {
-    const url = `${globalThis.location.origin}/api/professores/${item.id}/ics`;
+  function emailSugerido(item: ProfessorItem) {
+    if (item.email) return item.email;
+    const base = item.nome
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z\s]/g, "")
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .join(".");
+    return `${base || "professor"}@marlenefrattini.edu.br`;
+  }
+
+  /** Cria ou redefine o login (e-mail + senha) do professor. */
+  async function criarAcesso(item: ProfessorItem) {
+    const email = globalThis.prompt(
+      `E-mail de acesso de ${item.nome}:`,
+      emailSugerido(item),
+    );
+    if (email === null) return;
+    if (!email.includes("@")) {
+      setErro("Informe um e-mail válido com @.");
+      return;
+    }
+
+    const senha = globalThis.prompt(
+      "Senha inicial — deixe em branco para o sistema gerar uma senha temporária forte:",
+      "",
+    );
+    if (senha === null) return;
+
+    setOcupado(true);
+    setErro(null);
+    setAviso(null);
     try {
-      await navigator.clipboard.writeText(url);
+      const res = await fetch(`/api/professores/${item.id}/acesso`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), senha: senha.trim() || undefined }),
+      });
+      const data = (await res.json()) as {
+        ok: boolean;
+        email?: string;
+        senhaTemporaria?: string | null;
+        mensagem?: string;
+        error?: string;
+      };
+      if (!res.ok || !data.ok) {
+        setErro(data.error ?? "Não foi possível criar o acesso.");
+        return;
+      }
+      setCredenciais({
+        nome: item.nome,
+        email: data.email ?? email,
+        senha: data.senhaTemporaria ?? (senha.trim() || null),
+      });
+      setAviso(data.mensagem ?? "Acesso criado/atualizado com sucesso.");
+      router.refresh();
+    } finally {
+      setOcupado(false);
+    }
+  }
+
+  async function copiarCredenciais() {
+    if (!credenciais) return;
+    const texto = [
+      "Agenda da Gestão Escolar — EE PROFA. MARLENE FRATTINI",
+      `Professor(a): ${credenciais.nome}`,
+      `Endereço: ${globalThis.location.origin}/entrar`,
+      `E-mail: ${credenciais.email}`,
+      credenciais.senha ? `Senha: ${credenciais.senha}` : "Senha: a definida pela gestão",
+      "",
+      "Você verá apenas a sua agenda e os compromissos coletivos da escola.",
+    ].join("\n");
+    try {
+      await navigator.clipboard.writeText(texto);
+      setCopiaOk(true);
+      globalThis.setTimeout(() => setCopiaOk(false), 2500);
+    } catch {
+      setErro("Não foi possível copiar automaticamente.");
+    }
+  }
+
+  async function removerAcesso(item: ProfessorItem) {
+    if (!globalThis.confirm(`Remover o login de ${item.nome}? O cadastro do professor permanece.`)) {
+      return;
+    }
+    setOcupado(true);
+    await fetch(`/api/professores/${item.id}/acesso`, { method: "DELETE" });
+    setOcupado(false);
+    setAviso("Acesso removido.");
+    router.refresh();
+  }
+
+  async function copiarFeed(item: ProfessorItem) {
+    try {
+      await navigator.clipboard.writeText(
+        `${globalThis.location.origin}/api/professores/${item.id}/ics`,
+      );
       setCopiado(item.id);
       globalThis.setTimeout(() => setCopiado(null), 2500);
     } catch {
@@ -217,8 +218,8 @@ export function ProfessorManager({ professores }: { professores: ProfessorItem[]
           {editando ? "Editar professor(a)" : "Cadastrar professor(a)"}
         </h2>
         <p className="mt-0.5 text-xs text-slate-500">
-          O professor passa a ter agenda própria: você o convoca para orientações, HTPC, conselhos
-          de classe e reuniões de pais.
+          Depois de cadastrar, crie o login em “🔑 Criar acesso” — cada professor tem e-mail e senha
+          próprios.
         </p>
 
         <div className="mt-4 space-y-3">
@@ -236,7 +237,7 @@ export function ProfessorManager({ professores }: { professores: ProfessorItem[]
               className={inputClass}
               value={form.disciplina}
               onChange={(event) => setForm({ ...form, disciplina: event.target.value })}
-              placeholder="Matemática, Língua Portuguesa, Educação Física..."
+              placeholder="Matemática, Língua Portuguesa..."
             />
           </Field>
           <Field label="Turmas / anos">
@@ -260,22 +261,22 @@ export function ProfessorManager({ professores }: { professores: ProfessorItem[]
               ))}
             </select>
           </Field>
-          <Field label="WhatsApp (com DDD)" hint="Necessário para avisos automáticos.">
+          <Field label="E-mail" hint="Será o e-mail de login do professor.">
+            <input
+              type="email"
+              className={inputClass}
+              value={form.email}
+              onChange={(event) => setForm({ ...form, email: event.target.value })}
+              placeholder="nome@marlenefrattini.edu.br"
+            />
+          </Field>
+          <Field label="WhatsApp (com DDD)" hint="Usado para avisos automáticos.">
             <input
               className={inputClass}
               value={form.telefone}
               onChange={(event) => setForm({ ...form, telefone: event.target.value })}
               placeholder="(11) 98812-4477"
               inputMode="tel"
-            />
-          </Field>
-          <Field label="E-mail">
-            <input
-              type="email"
-              className={inputClass}
-              value={form.email}
-              onChange={(event) => setForm({ ...form, email: event.target.value })}
-              placeholder="professor@escola.edu.br"
             />
           </Field>
           <Field label="Observações">
@@ -334,6 +335,54 @@ export function ProfessorManager({ professores }: { professores: ProfessorItem[]
       </form>
 
       <div className="space-y-4">
+        {credenciais ? (
+          <section className="overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-600 p-5 text-white shadow-lg">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-emerald-100">
+                  Acesso criado — envie ao professor
+                </p>
+                <p className="mt-1 text-sm font-semibold">{credenciais.nome}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCredenciais(null)}
+                className="rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-semibold hover:bg-white/25"
+              >
+                Fechar ✕
+              </button>
+            </div>
+            <dl className="mt-3 space-y-1.5 text-[11px]">
+              <div>
+                <dt className="text-emerald-100">Endereço do sistema</dt>
+                <dd className="font-mono">/entrar</dd>
+              </div>
+              <div>
+                <dt className="text-emerald-100">E-mail</dt>
+                <dd className="font-mono font-semibold">{credenciais.email}</dd>
+              </div>
+              <div>
+                <dt className="text-emerald-100">Senha</dt>
+                <dd className="font-mono text-lg font-bold tracking-wider">
+                  {credenciais.senha ?? "definida pela gestão"}
+                </dd>
+              </div>
+            </dl>
+            <button
+              type="button"
+              onClick={() => void copiarCredenciais()}
+              className="mt-3 rounded-lg bg-white px-3 py-2 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-50"
+            >
+              {copiaOk ? "✓ Copiado" : "📋 Copiar credenciais"}
+            </button>
+            <p className="mt-2 rounded-lg bg-white/10 px-3 py-2 text-[11px] leading-relaxed text-emerald-50">
+              {credenciais.senha
+                ? "A senha temporária é exibida apenas agora. O professor deve alterá-la em “Minha senha” após entrar."
+                : "A senha foi definida por você. Oriente o professor a alterá-la no primeiro acesso."}
+            </p>
+          </section>
+        ) : null}
+
         {aviso ? (
           <div className="rounded-xl bg-indigo-50 px-3.5 py-2.5 text-[11px] font-medium leading-relaxed text-indigo-800 ring-1 ring-indigo-200">
             {aviso}
@@ -372,95 +421,85 @@ export function ProfessorManager({ professores }: { professores: ProfessorItem[]
                   </p>
                 ) : (
                   doTurno.map((p) => (
-                    <div
-                      key={p.id}
-                      className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
-                    >
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-slate-900">
-                          {p.nome}
-                          {!p.ativo ? (
-                            <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">
-                              inativo
-                            </span>
+                    <div key={p.id} className="px-4 py-3">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-slate-900">
+                            {p.nome}
+                            {!p.ativo ? (
+                              <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">
+                                inativo
+                              </span>
+                            ) : null}
+                            {p.temAcesso ? (
+                              <span className="ml-2 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-200">
+                                login ativo
+                              </span>
+                            ) : (
+                              <span className="ml-2 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-800 ring-1 ring-inset ring-amber-200">
+                                sem login
+                              </span>
+                            )}
+                          </p>
+                          <p className="text-[11px] text-slate-500">
+                            {[p.disciplina, p.turmas, p.telefone].filter(Boolean).join(" · ") ||
+                              "Sem dados complementares"}
+                          </p>
+                          <p className="mt-0.5 text-[11px] text-slate-500">
+                            {p.email ? (
+                              <>Login: <span className="font-mono">{p.email}</span></>
+                            ) : (
+                              "E-mail de acesso ainda não cadastrado"
+                            )}
+                            {p.temAcesso && p.ultimoAcesso
+                              ? ` · último acesso ${new Date(p.ultimoAcesso).toLocaleString("pt-BR")}`
+                              : ""}
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+                            {p.totalCompromissos} convocação(ões)
+                          </span>
+                          <button
+                            type="button"
+                            disabled={ocupado}
+                            onClick={() => void criarAcesso(p)}
+                            className="rounded-lg bg-indigo-600 px-2.5 py-1.5 text-[11px] font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
+                          >
+                            {p.temAcesso ? "🔑 Redefinir acesso" : "🔑 Criar acesso"}
+                          </button>
+                          {p.temAcesso ? (
+                            <button
+                              type="button"
+                              disabled={ocupado}
+                              onClick={() => void removerAcesso(p)}
+                              className="rounded-lg bg-white px-2 py-1.5 text-[10px] font-semibold text-rose-600 ring-1 ring-rose-200 hover:bg-rose-50 disabled:opacity-60"
+                            >
+                              🚫
+                            </button>
                           ) : null}
-                        </p>
-                        <p className="text-[11px] text-slate-500">
-                          {[p.disciplina, p.turmas, p.telefone].filter(Boolean).join(" · ") ||
-                            "Sem dados complementares"}
-                        </p>
-                        {linkDoProfessor(p) ? (
-                          <p className="mt-0.5 max-w-[320px] truncate font-mono text-[10px] text-indigo-600">
-                            {linkDoProfessor(p)}
-                          </p>
-                        ) : (
-                          <p className="mt-0.5 text-[10px] text-slate-400">
-                            Sem link de acesso — clique em “Gerar link”
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
-                          {p.totalCompromissos} convocação(ões)
-                        </span>
-                        <Link
-                          href={`/professores/${p.id}`}
-                          className="rounded-lg bg-indigo-600 px-2.5 py-1.5 text-[11px] font-semibold text-white hover:bg-indigo-700"
-                        >
-                          Abrir agenda
-                        </Link>
-                        <button
-                          type="button"
-                          onClick={() => void copiarLink(p)}
-                          className="rounded-lg bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50"
-                        >
-                          {copiado === p.id ? "✓ Copiado" : "Feed .ics"}
-                        </button>
-                        <button
-                          type="button"
-                          disabled={ocupado}
-                          onClick={() => void gerarLink(p, false)}
-                          title="Copia o link pessoal de leitura da agenda do professor (não invalida o atual)"
-                          className="rounded-lg bg-indigo-50 px-2.5 py-1.5 text-[11px] font-semibold text-indigo-700 ring-1 ring-indigo-200 hover:bg-indigo-100 disabled:opacity-60"
-                        >
-                          {p.tokenAcesso ? "🔗 Copiar link" : "🔗 Gerar link"}
-                        </button>
-                        {p.tokenAcesso ? (
                           <button
                             type="button"
-                            disabled={ocupado}
-                            onClick={() => void gerarLink(p, true)}
-                            title="Gera um novo link e invalida o anterior"
-                            className="rounded-lg bg-white px-2 py-1.5 text-[10px] font-semibold text-rose-600 ring-1 ring-rose-200 hover:bg-rose-50 disabled:opacity-60"
+                            onClick={() => void copiarFeed(p)}
+                            className="rounded-lg bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50"
                           >
-                            ↻
+                            {copiado === p.id ? "✓ Copiado" : "Feed .ics"}
                           </button>
-                        ) : null}
-                        {p.telefone ? (
                           <button
                             type="button"
-                            disabled={ocupado}
-                            onClick={() => void avisarProfessor(p, "CONVITE")}
-                            title="Abre o WhatsApp do professor com o aviso"
-                            className="rounded-lg bg-[#25D366]/12 px-2.5 py-1.5 text-[11px] font-semibold text-[#128C7E] ring-1 ring-[#25D366]/30 hover:bg-[#25D366]/20 disabled:opacity-60"
+                            onClick={() => editar(p)}
+                            className="rounded-lg bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50"
                           >
-                            💬 Avisar
+                            Editar
                           </button>
-                        ) : null}
-                        <button
-                          type="button"
-                          onClick={() => editar(p)}
-                          className="rounded-lg bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50"
-                        >
-                          Editar
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => void excluir(p.id)}
-                          className="rounded-lg bg-white px-2.5 py-1.5 text-[11px] font-semibold text-rose-600 ring-1 ring-rose-200 hover:bg-rose-50"
-                        >
-                          Excluir
-                        </button>
+                          <button
+                            type="button"
+                            onClick={() => void excluir(p.id)}
+                            className="rounded-lg bg-white px-2.5 py-1.5 text-[11px] font-semibold text-rose-600 ring-1 ring-rose-200 hover:bg-rose-50"
+                          >
+                            Excluir
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))
@@ -478,17 +517,18 @@ export function ProfessorManager({ professores }: { professores: ProfessorItem[]
                 Nenhum professor cadastrado ainda
               </p>
               <p className="max-w-md text-xs text-slate-500">
-                Cadastre o corpo docente para convocar professores nas orientações pedagógicas,
-                HTPC, conselhos de classe e reuniões de pais. Cada professor recebe a própria agenda
-                com feed iCalendar e avisos por WhatsApp.
+                Cadastre o corpo docente, depois crie o acesso de cada um com e-mail e senha. O
+                professor verá somente a própria agenda e os compromissos coletivos da escola.
               </p>
             </div>
           </div>
         ) : (
           <p className="text-[11px] text-slate-400">
-            Turnos: {TURNOS.map((t) => t.label).join(" · ")}. A agenda individual de cada professor é
-            somente-leitura para o docente (link do feed iCalendar + avisos por WhatsApp), enquanto a
-            gestão permanece com o controle total da agenda.
+            Turnos: {TURNOS.map((t) => t.label).join(" · ")}. Cada professor tem login próprio
+            (e-mail + senha) e enxerga apenas a sua agenda e a agenda coletiva da escola.{" "}
+            <Link href="/usuarios" className="font-semibold text-indigo-600 hover:text-indigo-700">
+              Ver todos os usuários →
+            </Link>
           </p>
         )}
       </div>

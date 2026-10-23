@@ -9,7 +9,7 @@ export type NavItem = {
   icon: string;
   description: string;
   /** Perfis que enxergam o item. Ausente = todos. */
-  papeis?: ("ADMIN" | "GESTAO" | "LEITURA")[];
+  papeis?: ("ADMIN" | "GESTAO" | "LEITURA" | "PROFESSOR")[];
 };
 
 export const NAV_ITEMS: NavItem[] = [
@@ -55,7 +55,7 @@ export function NavLinks({
   papel,
 }: {
   variant?: "sidebar" | "mobile";
-  papel?: "ADMIN" | "GESTAO" | "LEITURA";
+  papel?: "ADMIN" | "GESTAO" | "LEITURA" | "PROFESSOR";
 }) {
   const pathname = usePathname();
   const visiveis = NAV_ITEMS.filter(

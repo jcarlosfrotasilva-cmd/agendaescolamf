@@ -7,7 +7,7 @@ import { BotaoSair } from "./BotaoSair";
 export type UsuarioSessao = {
   nome: string;
   email: string;
-  papel: "ADMIN" | "GESTAO" | "LEITURA";
+  papel: "ADMIN" | "GESTAO" | "LEITURA" | "PROFESSOR";
 } | null;
 
 export function Shell({

@@ -89,8 +89,13 @@ export const usuarios = pgTable(
     nome: text("nome").notNull(),
     email: text("email").notNull().unique(),
     senhaHash: text("senha_hash").notNull(),
+    /** ADMIN | GESTAO | LEITURA | PROFESSOR */
     papel: text("papel").notNull().default("GESTAO"),
     cargo: text("cargo"),
+    /** Preenchido quando o usuário é um professor (acesso à própria agenda). */
+    professorId: integer("professor_id").references(() => professores.id, {
+      onDelete: "cascade",
+    }),
     ativo: boolean("ativo").notNull().default(true),
     ultimoAcesso: timestamp("ultimo_acesso", { withTimezone: true }),
     criadoEm: timestamp("criado_em", { withTimezone: true }).notNull().defaultNow(),

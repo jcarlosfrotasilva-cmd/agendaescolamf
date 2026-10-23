@@ -8,6 +8,7 @@ import {
   gestores,
   mensagensWhatsapp,
   professores,
+  usuarios,
   type Compromisso,
   type Gestor,
   type Professor,
@@ -358,15 +359,23 @@ export async function listarProfessores(filtros: { turno?: string; ativo?: boole
   const rows = await db
     .select({
       professor: professores,
-      total: sql<number>`count(${compromissoProfessores.id})::int`,
+      total: sql<number>`count(distinct ${compromissoProfessores.id})::int`,
+      usuarioId: sql<number | null>`max(${usuarios.id})`,
+      ultimoAcesso: sql<string | null>`max(${usuarios.ultimoAcesso})`,
     })
     .from(professores)
     .leftJoin(compromissoProfessores, eq(compromissoProfessores.professorId, professores.id))
+    .leftJoin(usuarios, eq(usuarios.professorId, professores.id))
     .where(condicoes.length > 0 ? and(...condicoes) : undefined)
     .groupBy(professores.id)
     .orderBy(asc(professores.turno), asc(professores.nome));
 
-  return rows.map((r) => ({ ...r.professor, totalCompromissos: r.total }));
+  return rows.map((r) => ({
+    ...r.professor,
+    totalCompromissos: r.total,
+    temAcesso: r.usuarioId !== null,
+    ultimoAcesso: r.ultimoAcesso,
+  }));
 }
 
 export async function obterProfessor(id: number): Promise<ProfessorComTotal | null> {

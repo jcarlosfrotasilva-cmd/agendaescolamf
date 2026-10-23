@@ -122,7 +122,7 @@ carregado por `next.config.ts` (e, em fallback, por `src/db/index.ts`):
 | **Administrador(a)** | `/entrar` com e-mail e senha | Tudo: agenda, professores, WhatsApp, usuários e configuração do banco |
 | **Gestão escolar** | `/entrar` com e-mail e senha | Cria/edita compromissos, convoca professores, envia WhatsApp, dá baixa |
 | **Consulta (leitura)** | `/entrar` com e-mail e senha | Somente visualiza a agenda, relatórios e indicadores |
-| **Professor(a)** | Link pessoal `(/professor/<código>)`, sem senha | Vê apenas a própria agenda, em modo leitura |
+| **Professor(a)** | `/entrar` com **e-mail e senha próprios** | Vê apenas a própria agenda, em modo leitura |
 | **Público externo** | `/api/public/v1/*` e feed `.ics` | Consulta online somente leitura, sem dados de contato |
 
 - **Primeiro uso:** enquanto nenhum usuário existir, `/entrar` mostra a criação do primeiro
@@ -130,7 +130,11 @@ carregado por `next.config.ts` (e, em fallback, por `src/db/index.ts`):
 - **Sessão:** cookie HTTP-only assinado (HMAC-SHA256), validade de 12 horas, verificação no
   middleware. Todas as páginas e APIs internas redirecionam para `/entrar` (401 nas APIs).
 - **Senhas:** armazenadas com `scrypt` e salt individual — nunca em texto puro.
-- **Links dos professores:** gerados em *Professores → “Gerar link”* e enviados por WhatsApp.
+- **Acesso dos professores:** cada docente tem login próprio (e-mail + senha), criado em
+  *Professores → “🔑 Criar acesso”*. O perfil PROFESSOR só acessa `/minha-agenda` e `/minha-senha`;
+  as demais páginas redirecionam e as APIs de escrita respondem 403. O antigo link
+  `/professor/<código>` foi desativado e redireciona para `/entrar`.
+- **Links dos professores (legado):** gerados em *Professores → “Gerar link”* e enviados por WhatsApp.
   O link é pessoal, pode ser renovado a qualquer momento (invalida o anterior) e não dá acesso à
   área da gestão.
 - **Auditoria:** login, tentativa de acesso indevida, logout, convites, mensagens e alterações ficam

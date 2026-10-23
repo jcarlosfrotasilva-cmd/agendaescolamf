@@ -42,8 +42,15 @@ export function LoginForm({ primeiroAcesso }: { primeiroAcesso: boolean }) {
         setEntrando(false);
         return;
       }
+      const dados = data as { usuario?: { papel?: string } };
+      const ehProfessor = dados.usuario?.papel === "PROFESSOR";
       const proximo = params.get("proximo");
-      router.replace(proximo && proximo.startsWith("/") ? proximo : "/");
+      const destino = ehProfessor
+        ? "/minha-agenda"
+        : proximo && proximo.startsWith("/") && proximo !== "/minha-agenda"
+          ? proximo
+          : "/";
+      router.replace(destino);
       router.refresh();
     } catch {
       setErro("Falha de comunicação com o servidor.");

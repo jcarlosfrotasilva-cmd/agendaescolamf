@@ -11,7 +11,7 @@ import {
   type PayloadSessao,
 } from "./auth-edge";
 
-export type Papel = "ADMIN" | "GESTAO" | "LEITURA";
+export type Papel = "ADMIN" | "GESTAO" | "LEITURA" | "PROFESSOR";
 
 export const PAPEIS: {
   key: Papel;
@@ -36,6 +36,13 @@ export const PAPEIS: {
     label: "Consulta (somente leitura)",
     descricao: "Acompanha a agenda e os relatórios, sem permissão para alterar registros.",
     chip: "bg-slate-100 text-slate-600 ring-slate-300",
+  },
+  {
+    key: "PROFESSOR",
+    label: "Professor(a)",
+    descricao:
+      "Acessa com e-mail e senha próprios: vê a própria agenda e os compromissos coletivos da escola.",
+    chip: "bg-teal-50 text-teal-700 ring-teal-200",
   },
 ];
 
@@ -78,6 +85,7 @@ export async function criarSessao(usuario: Usuario) {
     nome: usuario.nome,
     email: usuario.email,
     papel: usuario.papel as Papel,
+    professorId: usuario.professorId ?? null,
     exp: Date.now() + DURACAO_SESSAO_MS,
   };
   const token = await assinarPayload(payload);
@@ -183,3 +191,14 @@ export function podeEditar(papel: string | undefined): boolean {
 export function podeAdministrar(papel: string | undefined): boolean {
   return papel === "ADMIN";
 }
+
+/** Professor só enxerga a própria agenda — nunca a gestão nem colegas. */
+export function ehProfessor(papel: string | undefined): boolean {
+  return papel === "PROFESSOR";
+}
+
+/**
+ * Rotas permitidas ao perfil PROFESSOR (além de /api/auth e /minha-senha).
+ * Qualquer outra página da gestão é bloqueada no middleware.
+ */
+export const ROTAS_PROFESSOR = ["/minha-agenda", "/minha-senha"];

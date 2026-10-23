@@ -154,7 +154,13 @@ export async function POST(request: NextRequest) {
     return json({
       ok: true,
       criado: false,
-      usuario: { nome: usuario.nome, email: usuario.email, papel: usuario.papel },
+      destino: usuario.papel === "PROFESSOR" ? "/minha-agenda" : "/",
+      usuario: {
+        nome: usuario.nome,
+        email: usuario.email,
+        papel: usuario.papel,
+        professorId: usuario.professorId ?? null,
+      },
     });
   } catch (error) {
     const explicacao = explicarErroBanco(error);
