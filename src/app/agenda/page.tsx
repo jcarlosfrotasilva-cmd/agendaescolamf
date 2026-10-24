@@ -107,6 +107,12 @@ export default async function AgendaPage({ searchParams }: { searchParams: Searc
           >
             ＋ Novo compromisso
           </Link>
+          <Link
+            href="/compromissos/novo?publico=docente&tipo=HTPC"
+            className="rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700"
+          >
+            👩‍🏫 Convocar docentes
+          </Link>
           <a
             href={`/api/public/v1/agenda?${queryIcs.toString()}`}
             className="rounded-xl bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 ring-1 ring-slate-300 transition hover:bg-slate-50"

@@ -45,6 +45,8 @@ export type CompromissoFormValores = {
   professorIds: number[];
 };
 
+type Publico = "GESTAO" | "DOCENTES" | "AMBOS";
+
 function valoresIniciais(): CompromissoFormValores {
   const hoje = isoToday();
   return {
@@ -73,11 +75,13 @@ export function CompromissoForm({
   professores = [],
   inicial,
   modo,
+  publicoInicial,
 }: {
   gestores: GestorOpcao[];
   professores?: ProfessorOpcao[];
   inicial?: Partial<CompromissoFormValores>;
   modo: "criar" | "editar";
+  publicoInicial?: Publico;
 }) {
   const router = useRouter();
   const [valores, setValores] = useState<CompromissoFormValores>(() => ({
@@ -88,6 +92,9 @@ export function CompromissoForm({
   const [salvando, setSalvando] = useState(false);
   const [enviarConvite, setEnviarConvite] = useState(false);
   const [avisoConvite, setAvisoConvite] = useState<string | null>(null);
+  const [publico, setPublico] = useState<Publico>(
+    publicoInicial ?? ((inicial?.professorIds?.length ?? 0) > 0 ? "AMBOS" : "GESTAO"),
+  );
 
   const set = <K extends keyof CompromissoFormValores>(
     chave: K,
@@ -109,6 +116,16 @@ export function CompromissoForm({
   async function enviar(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setErro(null);
+    setAvisoConvite(null);
+
+    if (publico !== "GESTAO" && valores.professorIds.length === 0) {
+      setErro(
+        "Você escolheu convocar professores, mas nenhum foi selecionado. Marque ao menos um docente na lista de convocação.",
+      );
+      globalThis.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
     setSalvando(true);
 
     const payload = {
@@ -133,8 +150,7 @@ export function CompromissoForm({
     };
 
     try {
-      const url =
-        modo === "criar" ? "/api/compromissos" : `/api/compromissos/${valores.id}`;
+      const url = modo === "criar" ? "/api/compromissos" : `/api/compromissos/${valores.id}`;
       const res = await fetch(url, {
         method: modo === "criar" ? "POST" : "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -177,6 +193,156 @@ export function CompromissoForm({
 
   return (
     <form onSubmit={enviar} className="space-y-5">
+      {/* ================= PÚBLICO DO COMPROMISSO ================= */}
+      <div className="card-surface overflow-hidden">
+        <div className="border-b border-slate-100 bg-slate-50 px-5 py-3.5">
+          <h2 className="text-sm font-semibold text-slate-900">Quem participa deste compromisso?</h2>
+          <p className="mt-0.5 text-xs text-slate-500">
+            Defina se o compromisso é da gestão, dos professores (convocação de docentes) ou de ambos.
+            A escolha define em qual agenda ele aparece.
+          </p>
+        </div>
+
+        <div className="grid gap-2 p-4 sm:grid-cols-3">
+          {(
+            [
+              {
+                key: "GESTAO" as Publico,
+                icone: "🗂️",
+                titulo: "Gestão",
+                desc: "Direção, vice-direção, coordenação e organização.",
+              },
+              {
+                key: "DOCENTES" as Publico,
+                icone: "👩‍🏫",
+                titulo: "Professores",
+                desc: "Convocação de docentes: aula, HTPC, conselho, formação.",
+              },
+              {
+                key: "AMBOS" as Publico,
+                icone: "👥",
+                titulo: "Gestão + Professores",
+                desc: "Compromisso coletivo com a participação docente.",
+              },
+            ] as const
+          ).map((opcao) => {
+            const ativo = publico === opcao.key;
+            return (
+              <button
+                key={opcao.key}
+                type="button"
+                onClick={() => {
+                  setPublico(opcao.key);
+                  if (opcao.key === "GESTAO") set("professorIds", []);
+                  if (opcao.key === "DOCENTES" && valores.tipo === "REUNIAO") {
+                    set("tipo", "HTPC");
+                  }
+                }}
+                className={`rounded-xl p-3.5 text-left ring-1 transition ${
+                  ativo
+                    ? "bg-indigo-50 ring-2 ring-indigo-500"
+                    : "bg-white ring-slate-200 hover:ring-indigo-300"
+                }`}
+              >
+                <span className="text-lg">{opcao.icone}</span>
+                <p className="mt-1 text-xs font-semibold text-slate-900">{opcao.titulo}</p>
+                <p className="mt-0.5 text-[11px] leading-relaxed text-slate-500">{opcao.desc}</p>
+              </button>
+            );
+          })}
+        </div>
+
+        {publico !== "GESTAO" ? (
+          <div className="border-t border-slate-100 bg-emerald-50/40 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="text-xs font-semibold text-slate-900">
+                  Convocar professores — {valores.professorIds.length} selecionado(s)
+                </p>
+                <p className="text-[11px] text-slate-600">
+                  Cada docente selecionado recebe o compromisso na <strong>própria agenda</strong>{" "}
+                  (/minha-agenda), com aviso por WhatsApp.
+                </p>
+              </div>
+              {professores.length > 0 ? (
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => set("professorIds", professores.map((p) => p.id))}
+                    className="rounded-lg bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 ring-1 ring-slate-200 hover:bg-slate-100"
+                  >
+                    Selecionar todos
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => set("professorIds", [])}
+                    className="rounded-lg bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 ring-1 ring-slate-200 hover:bg-slate-100"
+                  >
+                    Limpar
+                  </button>
+                </div>
+              ) : null}
+            </div>
+
+            {professores.length === 0 ? (
+              <p className="mt-3 rounded-lg bg-white px-3 py-2.5 text-[11px] text-slate-600 ring-1 ring-slate-200">
+                Nenhum professor cadastrado.{" "}
+                <Link
+                  href="/professores"
+                  className="font-semibold text-indigo-600 hover:text-indigo-700"
+                >
+                  Cadastre o corpo docente
+                </Link>{" "}
+                para poder convocar.
+              </p>
+            ) : (
+              <div className="mt-3 grid max-h-60 gap-1.5 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-3">
+                {professores.map((professor) => {
+                  const marcado = valores.professorIds.includes(professor.id);
+                  return (
+                    <button
+                      key={professor.id}
+                      type="button"
+                      onClick={() =>
+                        set(
+                          "professorIds",
+                          marcado
+                            ? valores.professorIds.filter((id) => id !== professor.id)
+                            : [...valores.professorIds, professor.id],
+                        )
+                      }
+                      className={`flex items-start gap-2 rounded-lg px-2.5 py-2 text-left ring-1 transition ${
+                        marcado
+                          ? "bg-emerald-50 ring-emerald-300"
+                          : "bg-white ring-slate-200 hover:ring-indigo-300"
+                      }`}
+                    >
+                      <span
+                        className={`mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded text-[10px] font-bold text-white ${
+                          marcado ? "bg-emerald-500" : "bg-slate-300"
+                        }`}
+                      >
+                        {marcado ? "✓" : ""}
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block truncate text-[11px] font-semibold text-slate-800">
+                          {professor.nome}
+                        </span>
+                        <span className="block truncate text-[10px] text-slate-500">
+                          {[professor.disciplina, professor.turmas].filter(Boolean).join(" · ") ||
+                            "sem disciplina informada"}
+                        </span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        ) : null}
+      </div>
+
+      {/* ================= ① IDENTIFICAÇÃO ================= */}
       <div className="card-surface p-5">
         <div className="flex items-center gap-2">
           <span className="grid h-8 w-8 place-items-center rounded-xl bg-indigo-50 text-sm text-indigo-600">
@@ -185,7 +351,7 @@ export function CompromissoForm({
           <div>
             <h2 className="text-sm font-semibold text-slate-900">Identificação do compromisso</h2>
             <p className="text-xs text-slate-500">
-              Título, tipo, assunto e descrição da orientação ou reunião da gestão.
+              Título, tipo, assunto e descrição da orientação, aula ou reunião.
             </p>
           </div>
         </div>
@@ -196,14 +362,14 @@ export function CompromissoForm({
               className={inputClass}
               value={valores.titulo}
               onChange={(event) => set("titulo", event.target.value)}
-              placeholder="Ex.: Orientação Pedagógica — Sequências didáticas de Matemática"
+              placeholder="Ex.: HTPC — Planejamento coletivo do 3º bimestre"
               required
             />
           </Field>
 
           <Field
             label="Tipo de compromisso"
-            hint="Inclui as reuniões colegiadas: APM, Conselho de Escola e Grêmio Estudantil."
+            hint="Reuniões colegiadas, aulas, HTPC, formações e demais tipos."
           >
             <select
               className={selectClass}
@@ -245,7 +411,7 @@ export function CompromissoForm({
           <Field
             label="Descrição / pauta detalhada"
             className="sm:col-span-2"
-            hint="Documentos a levar, pontos de pauta, encaminhamentos esperados."
+            hint="Documentos a levar, pontos de pauta e encaminhamentos esperados."
           >
             <textarea
               className={`${inputClass} min-h-[104px] resize-y`}
@@ -257,6 +423,7 @@ export function CompromissoForm({
         </div>
       </div>
 
+      {/* ================= ② DATA, HORA, LOCAL ================= */}
       <div className="card-surface p-5">
         <div className="flex items-center gap-2">
           <span className="grid h-8 w-8 place-items-center rounded-xl bg-emerald-50 text-sm text-emerald-600">
@@ -310,7 +477,11 @@ export function CompromissoForm({
             />
           </Field>
 
-          <Field label="Cargo responsável" className="sm:col-span-2">
+          <Field
+            label="Cargo responsável"
+            className="sm:col-span-2"
+            hint="Cargo que responde pelo compromisso na agenda da gestão."
+          >
             <select
               className={selectClass}
               value={valores.cargoResponsavel}
@@ -327,7 +498,11 @@ export function CompromissoForm({
             </select>
           </Field>
 
-          <Field label="Gestor(a) responsável" className="sm:col-span-2" hint="Opcional, mas ajuda na organização por servidor.">
+          <Field
+            label="Gestor(a) responsável"
+            className="sm:col-span-2"
+            hint="Opcional — ajuda na organização por servidor."
+          >
             <select
               className={selectClass}
               value={valores.gestorId}
@@ -348,7 +523,7 @@ export function CompromissoForm({
               list="locais-sugeridos"
               value={valores.local}
               onChange={(event) => set("local", event.target.value)}
-              placeholder="Sala de Reuniões, Auditório, Google Meet..."
+              placeholder="Sala de Reuniões, Auditório, Sala dos Professores..."
               required
             />
             <datalist id="locais-sugeridos">
@@ -358,11 +533,7 @@ export function CompromissoForm({
             </datalist>
           </Field>
 
-          <Field
-            label="Participantes / público (texto livre)"
-            className="sm:col-span-2"
-            hint="Use o campo abaixo para convocar professores nominalmente — eles recebem o compromisso na agenda própria."
-          >
+          <Field label="Participantes / público (texto livre)" className="sm:col-span-2">
             <input
               className={inputClass}
               value={valores.participantes}
@@ -372,95 +543,6 @@ export function CompromissoForm({
           </Field>
         </div>
 
-        {professores.length > 0 ? (
-          <div className="mt-4 rounded-xl bg-slate-50 p-3.5 ring-1 ring-slate-200">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <p className="text-xs font-semibold text-slate-800">
-                  Convocar professores ({valores.professorIds.length} selecionado(s))
-                </p>
-                <p className="text-[11px] text-slate-500">
-                  Cada docente selecionado recebe o compromisso na agenda dele, com feed iCalendar e
-                  aviso por WhatsApp.
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => set("professorIds", professores.map((p) => p.id))}
-                  className="rounded-lg bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 ring-1 ring-slate-200 hover:bg-slate-100"
-                >
-                  Selecionar todos
-                </button>
-                <button
-                  type="button"
-                  onClick={() => set("professorIds", [])}
-                  className="rounded-lg bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 ring-1 ring-slate-200 hover:bg-slate-100"
-                >
-                  Limpar
-                </button>
-              </div>
-            </div>
-
-            <div className="mt-3 grid max-h-56 gap-1.5 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-3">
-              {professores.map((professor) => {
-                const marcado = valores.professorIds.includes(professor.id);
-                return (
-                  <button
-                    key={professor.id}
-                    type="button"
-                    onClick={() =>
-                      set(
-                        "professorIds",
-                        marcado
-                          ? valores.professorIds.filter((id) => id !== professor.id)
-                          : [...valores.professorIds, professor.id],
-                      )
-                    }
-                    className={`flex items-start gap-2 rounded-lg px-2.5 py-2 text-left transition ring-1 ${
-                      marcado
-                        ? "bg-emerald-50 ring-emerald-300"
-                        : "bg-white ring-slate-200 hover:ring-indigo-300"
-                    }`}
-                  >
-                    <span
-                      className={`mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded text-[10px] font-bold text-white ${
-                        marcado ? "bg-emerald-500" : "bg-slate-300"
-                      }`}
-                    >
-                      {marcado ? "✓" : ""}
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block truncate text-[11px] font-semibold text-slate-800">
-                        {professor.nome}
-                      </span>
-                      <span className="block truncate text-[10px] text-slate-500">
-                        {[professor.disciplina, professor.turmas].filter(Boolean).join(" · ") ||
-                          "sem disciplina informada"}
-                      </span>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-
-            <Link
-              href="/professores"
-              className="mt-3 inline-block text-[11px] font-semibold text-indigo-600 hover:text-indigo-700"
-            >
-              Gerenciar corpo docente →
-            </Link>
-          </div>
-        ) : (
-          <p className="mt-4 rounded-xl bg-slate-50 px-3.5 py-3 text-[11px] text-slate-600 ring-1 ring-slate-200">
-            Nenhum professor cadastrado ainda.{" "}
-            <Link href="/professores" className="font-semibold text-indigo-600 hover:text-indigo-700">
-              Cadastre o corpo docente
-            </Link>{" "}
-            para convocar professores neste compromisso — cada um recebe a própria agenda.
-          </p>
-        )}
-
         <p className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-[11px] text-slate-600 ring-1 ring-slate-200">
           Duração estimada:{" "}
           <strong className="font-semibold text-slate-800">
@@ -469,6 +551,7 @@ export function CompromissoForm({
         </p>
       </div>
 
+      {/* ================= ③ DESPERTADOR ================= */}
       <div className="card-surface p-5">
         <div className="flex items-center gap-2">
           <span className="grid h-8 w-8 place-items-center rounded-xl bg-amber-50 text-sm text-amber-600">
@@ -563,12 +646,12 @@ export function CompromissoForm({
           </span>
           <span>
             <span className="block text-xs font-semibold text-slate-800">
-              Enviar o convite por WhatsApp automaticamente ao salvar
+              Avisar os convocados por WhatsApp ao salvar
             </span>
             <span className="mt-0.5 block text-[11px] text-slate-500">
-              O sistema dispara a convocação para o responsável vinculado sem nenhum clique, usando
-              o provedor de API configurado. O lembrete do despertador também é enviado
-              automaticamente na antecedência definida.
+              O sistema envia a convocação ao responsável e aos professores selecionados, usando o
+              provedor de API configurado. O lembrete do despertador também é enviado automaticamente
+              na antecedência definida.
             </span>
           </span>
         </button>

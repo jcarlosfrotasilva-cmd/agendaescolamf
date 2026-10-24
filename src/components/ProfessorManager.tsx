@@ -508,6 +508,12 @@ export function ProfessorManager({ professores }: { professores: ProfessorItem[]
                           <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
                             {p.totalCompromissos} convocação(ões)
                           </span>
+                          <Link
+                            href={`/compromissos/novo?professor=${p.id}&tipo=HTPC`}
+                            className="rounded-lg bg-emerald-600 px-2.5 py-1.5 text-[11px] font-semibold text-white hover:bg-emerald-700"
+                          >
+                            ＋ Convocar
+                          </Link>
                           <button
                             type="button"
                             disabled={ocupado}

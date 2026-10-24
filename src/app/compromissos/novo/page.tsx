@@ -20,6 +20,18 @@ export default async function NovoCompromissoPage({
     searchParams,
   ]);
   const tipoParam = Array.isArray(sp.tipo) ? sp.tipo[0] : sp.tipo;
+  const publicoParam = Array.isArray(sp.publico) ? sp.publico[0] : sp.publico;
+  const professorParam = Array.isArray(sp.professor) ? sp.professor[0] : sp.professor;
+  const professorIds = (professorParam ?? "")
+    .split(",")
+    .map((valor) => Number(valor))
+    .filter((valor) => Number.isFinite(valor) && valor > 0);
+  const publicoInicial =
+    publicoParam === "docente" || professorIds.length > 0
+      ? professorIds.length > 0
+        ? "AMBOS"
+        : "DOCENTES"
+      : undefined;
   const tipoSelecionado = TIPOS.find((t) => t.key === tipoParam)?.key ?? "ORIENTACAO_PEDAGOGICA";
   const preset = PRESETS_TIPO[tipoSelecionado];
   const hoje = isoToday();
@@ -86,7 +98,9 @@ export default async function NovoCompromissoPage({
             turmas: p.turmas,
             turno: p.turno,
           }))}
+          publicoInicial={publicoInicial}
           inicial={{
+            professorIds,
             tipo: tipoSelecionado,
             titulo: preset ? `${infoTipo.label} — ${hoje.slice(0, 4)}` : "",
             assunto: preset?.assunto ?? "",
