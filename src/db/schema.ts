@@ -49,6 +49,12 @@ export const compromissos = pgTable(
     horaInicio: text("hora_inicio").notNull(),
     horaFim: text("hora_fim").notNull(),
     local: text("local").notNull(),
+    /** Quem convoca: ESCOLA | URE | ORGAO_CENTRAL | OUTRO */
+    origem: text("origem").notNull().default("ESCOLA"),
+    /** Nome do órgão convocante (quando externo). */
+    orgaoConvocante: text("orgao_convocante"),
+    /** Ofício, circular, processo ou portaria que originou a convocação. */
+    documentoReferencia: text("documento_referencia"),
     participantes: text("participantes"),
     prioridade: text("prioridade").notNull().default("NORMAL"),
     status: text("status").notNull().default("AGENDADO"),

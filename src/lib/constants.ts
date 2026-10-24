@@ -436,6 +436,65 @@ export function prioridadeInfo(key: string) {
 
 export const LEMBRETES = [5, 10, 15, 30, 60, 120, 1440];
 
+export type OrigemKey = "ESCOLA" | "URE" | "ORGAO_CENTRAL" | "OUTRO";
+
+export const ORIGENS: {
+  key: OrigemKey;
+  label: string;
+  sigla: string;
+  descricao: string;
+  chip: string;
+  bar: string;
+}[] = [
+  {
+    key: "ESCOLA",
+    label: "Escola (gestão interna)",
+    sigla: "EE",
+    descricao: "Convocação feita pela própria direção, coordenação ou organização escolar.",
+    chip: "bg-indigo-50 text-indigo-700 ring-indigo-200",
+    bar: "bg-indigo-500",
+  },
+  {
+    key: "URE",
+    label: "URE — Unidade Regional de Ensino",
+    sigla: "URE",
+    descricao: "Formação ou reunião convocada pela Unidade Regional de Ensino.",
+    chip: "bg-amber-50 text-amber-800 ring-amber-200",
+    bar: "bg-amber-500",
+  },
+  {
+    key: "ORGAO_CENTRAL",
+    label: "Órgão central (SEDUC / Secretaria)",
+    sigla: "OC",
+    descricao: "Convocação da administração central, secretaria ou diretoria de ensino.",
+    chip: "bg-rose-50 text-rose-700 ring-rose-200",
+    bar: "bg-rose-500",
+  },
+  {
+    key: "OUTRO",
+    label: "Outro órgão / instituição",
+    sigla: "OU",
+    descricao: "Universidades, institutos, MEC ou outras instituições parceiras.",
+    chip: "bg-slate-100 text-slate-700 ring-slate-300",
+    bar: "bg-slate-500",
+  },
+];
+
+export const ORIGEM_KEYS = ORIGENS.map((o) => o.key) as [OrigemKey, ...OrigemKey[]];
+
+export function origemInfo(key: string) {
+  return (
+    ORIGENS.find((o) => o.key === key) ?? {
+      key: "ESCOLA" as OrigemKey,
+      label: key,
+      sigla: "EE",
+      descricao: "",
+      chip: "bg-slate-100 text-slate-600 ring-slate-300",
+      bar: "bg-slate-400",
+    }
+  );
+}
+
 export const LOCAIS_SUGERIDOS = [
   "Sala da Direção",
   "Sala de Coordenação Pedagógica",

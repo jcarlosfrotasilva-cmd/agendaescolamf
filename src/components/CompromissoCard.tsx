@@ -2,7 +2,7 @@ import Link from "next/link";
 import { cargoInfo } from "@/lib/constants";
 import { fmtShort, isoToday } from "@/lib/datetime";
 import type { CompromissoComGestor } from "@/lib/repo";
-import { CargoBadge, PrioridadeBadge, StatusBadge, TipoBadge } from "./ui";
+import { CargoBadge, OrigemBadge, PrioridadeBadge, StatusBadge, TipoBadge } from "./ui";
 
 export function CompromissoCard({
   item,
@@ -40,6 +40,7 @@ export function CompromissoCard({
               </span>
             ) : null}
             <TipoBadge tipo={item.tipo} />
+            <OrigemBadge origem={item.origem} orgao={item.orgaoConvocante} />
             <StatusBadge status={item.status} />
             <PrioridadeBadge prioridade={item.prioridade} />
             {atrasado ? (

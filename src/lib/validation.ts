@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
   CARGO_KEYS,
+  ORIGEM_KEYS,
   PRIORIDADE_KEYS,
   STATUS_KEYS,
   TIPO_KEYS,
@@ -32,6 +33,9 @@ export const compromissoSchema = z
     horaInicio: horaSchema,
     horaFim: horaSchema,
     local: z.string().trim().min(2, "Informe o local").max(160),
+    origem: z.enum(ORIGEM_KEYS).default("ESCOLA"),
+    orgaoConvocante: z.string().trim().max(200).optional().or(z.literal("")),
+    documentoReferencia: z.string().trim().max(120).optional().or(z.literal("")),
     participantes: z.string().trim().max(600).optional().or(z.literal("")),
     prioridade: z.enum(PRIORIDADE_KEYS).default("NORMAL"),
     status: z.enum(STATUS_KEYS).default("AGENDADO"),

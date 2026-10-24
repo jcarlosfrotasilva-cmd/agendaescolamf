@@ -7,6 +7,7 @@ import {
   CARGOS,
   LEMBRETES,
   LOCAIS_SUGERIDOS,
+  ORIGENS,
   PRIORIDADES,
   STATUSES,
   TIPOS,
@@ -37,6 +38,9 @@ export type CompromissoFormValores = {
   horaInicio: string;
   horaFim: string;
   local: string;
+  origem: string;
+  orgaoConvocante: string;
+  documentoReferencia: string;
   participantes: string;
   prioridade: string;
   status: string;
@@ -61,6 +65,9 @@ function valoresIniciais(): CompromissoFormValores {
     horaInicio: "08:00",
     horaFim: "10:00",
     local: "",
+    origem: "ESCOLA",
+    orgaoConvocante: "",
+    documentoReferencia: "",
     participantes: "",
     prioridade: "NORMAL",
     status: "AGENDADO",
@@ -140,6 +147,9 @@ export function CompromissoForm({
       horaInicio: valores.horaInicio,
       horaFim: valores.horaFim,
       local: valores.local,
+      origem: valores.origem,
+      orgaoConvocante: valores.orgaoConvocante,
+      documentoReferencia: valores.documentoReferencia,
       participantes: valores.participantes,
       prioridade: valores.prioridade,
       status: valores.status,
@@ -354,6 +364,69 @@ export function CompromissoForm({
               Título, tipo, assunto e descrição da orientação, aula ou reunião.
             </p>
           </div>
+        </div>
+
+        {/* Quem convoca: escola, URE ou órgão central */}
+        <div className="mt-4 rounded-xl bg-slate-50 p-3.5 ring-1 ring-slate-200">
+          <p className="text-xs font-semibold text-slate-800">Quem está convocando?</p>
+          <p className="text-[11px] text-slate-500">
+            Registre formações e reuniões convocadas pela <strong>URE</strong> ou pelo{" "}
+            <strong>órgão central</strong>: o compromisso entra na agenda do professor identificando a
+            origem externa.
+          </p>
+
+          <div className="mt-2 grid gap-1.5 sm:grid-cols-2 lg:grid-cols-4">
+            {ORIGENS.map((origem) => {
+              const ativo = valores.origem === origem.key;
+              return (
+                <button
+                  key={origem.key}
+                  type="button"
+                  onClick={() => set("origem", origem.key)}
+                  title={origem.descricao}
+                  className={`rounded-lg px-2.5 py-2 text-left ring-1 transition ${
+                    ativo
+                      ? "bg-amber-50 ring-2 ring-amber-500"
+                      : "bg-white ring-slate-200 hover:ring-indigo-300"
+                  }`}
+                >
+                  <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                    {origem.sigla}
+                  </span>
+                  <span className="block text-[11px] font-semibold text-slate-800">
+                    {origem.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {valores.origem !== "ESCOLA" ? (
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <Field
+                label="Órgão / instituição convocante"
+                hint="Ex.: URE de Presidente Prudente, SEDUC-SP, MEC."
+              >
+                <input
+                  className={inputClass}
+                  value={valores.orgaoConvocante}
+                  onChange={(event) => set("orgaoConvocante", event.target.value)}
+                  placeholder="URE de Presidente Prudente"
+                />
+              </Field>
+              <Field
+                label="Documento de referência"
+                hint="Ofício, circular, processo ou portaria da convocação."
+              >
+                <input
+                  className={inputClass}
+                  value={valores.documentoReferencia}
+                  onChange={(event) => set("documentoReferencia", event.target.value)}
+                  placeholder="Ofício nº 123/2026 — URE"
+                />
+              </Field>
+            </div>
+          ) : null}
         </div>
 
         <div className="mt-4 grid gap-4 sm:grid-cols-2">

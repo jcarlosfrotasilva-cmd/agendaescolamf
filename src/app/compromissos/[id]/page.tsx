@@ -2,8 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { StatusActions } from "@/components/StatusActions";
 import { WhatsAppComposer } from "@/components/WhatsAppComposer";
-import { Card, CargoBadge, PrioridadeBadge, StatusBadge, TipoBadge } from "@/components/ui";
-import { cargoInfo, tipoLabel, turnoInfo } from "@/lib/constants";
+import { Card, CargoBadge, OrigemBadge, PrioridadeBadge, StatusBadge, TipoBadge } from "@/components/ui";
+import { cargoInfo, origemInfo, tipoLabel, turnoInfo } from "@/lib/constants";
 import { fmtDuracao, fmtLong, duracaoMinutos, isoToday } from "@/lib/datetime";
 import { cloudApiConfigurada, telefoneFormatado } from "@/lib/whatsapp";
 import { montarDestinatarios, montarModelos } from "@/lib/whatsapp-servidor";
@@ -113,6 +113,7 @@ export default async function CompromissoDetalhePage({
         <div className="p-5">
           <div className="flex flex-wrap items-center gap-2">
             <TipoBadge tipo={item.tipo} />
+            <OrigemBadge origem={item.origem} orgao={item.orgaoConvocante} />
             <StatusBadge status={item.status} />
             <PrioridadeBadge prioridade={item.prioridade} />
             {item.despertadorAtivo ? (

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { cargoInfo, prioridadeInfo, statusInfo, tipoInfo } from "@/lib/constants";
+import { cargoInfo, origemInfo, prioridadeInfo, statusInfo, tipoInfo } from "@/lib/constants";
 
 export function CargoBadge({ cargo, compact = false }: { cargo: string; compact?: boolean }) {
   const info = cargoInfo(cargo);
@@ -21,6 +21,21 @@ export function StatusBadge({ status }: { status: string }) {
     >
       <span className={`h-1.5 w-1.5 rounded-full ${info.bar}`} />
       {info.label}
+    </span>
+  );
+}
+
+export function OrigemBadge({ origem, orgao }: { origem?: string | null; orgao?: string | null }) {
+  const key = origem ?? "ESCOLA";
+  if (key === "ESCOLA") return null;
+  const info = origemInfo(key);
+  return (
+    <span
+      title={orgao ?? info.descricao}
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ring-1 ring-inset ${info.chip}`}
+    >
+      ⚑ {info.sigla}
+      {orgao ? <span className="normal-case tracking-normal">· {orgao}</span> : null}
     </span>
   );
 }

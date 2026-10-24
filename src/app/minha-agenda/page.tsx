@@ -61,6 +61,7 @@ export default async function MinhaAgendaPage() {
   ]);
 
   const proximos = meus.filter((i) => i.dataFim >= hoje);
+  const externas = proximos.filter((i) => i.origem && i.origem !== "ESCOLA");
   const historico = meus.filter((i) => i.dataFim < hoje).slice(-8).reverse();
   const hojeLista = meus.filter((i) => i.dataInicio <= hoje && i.dataFim >= hoje);
   const turno = turnoInfo(professor.turno);
@@ -104,6 +105,18 @@ export default async function MinhaAgendaPage() {
           </div>
         </div>
       </header>
+
+      {externas.length > 0 ? (
+        <div className="rounded-xl bg-amber-50 px-4 py-3 ring-1 ring-amber-200">
+          <p className="text-xs font-semibold text-amber-900">
+            ⚑ Você tem {externas.length} convocação(ões) externa(s)
+          </p>
+          <p className="mt-0.5 text-[11px] leading-relaxed text-amber-800">
+            Formações e reuniões convocadas por URE ou órgão central, registradas pela escola na sua
+            agenda. Confira o órgão e o documento de referência em cada compromisso.
+          </p>
+        </div>
+      ) : null}
 
       <div className="grid gap-4 sm:grid-cols-3">
         <StatCard label="Compromissos de hoje" value={hojeLista.length} hint={fmtLong(hoje)} icon="📌" />

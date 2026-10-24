@@ -1,4 +1,4 @@
-import { cargoInfo, tipoLabel } from "./constants";
+import { cargoInfo, origemInfo, tipoLabel } from "./constants";
 import { fmtLong, fmtPeriodo } from "./datetime";
 import { ESCOLA } from "./escola";
 
@@ -131,6 +131,9 @@ export type DadosMensagem = {
   status: string;
   prioridade?: string;
   lembreteMinutos?: number;
+  origem?: string | null;
+  orgaoConvocante?: string | null;
+  documentoReferencia?: string | null;
   id: number;
 };
 
@@ -197,6 +200,15 @@ export function montarMensagem(
   linhas.push(`📝 Assunto: ${dados.assunto}`);
   linhas.push(`📅 ${periodo}`);
   linhas.push(`📍 Local: ${dados.local}`);
+  if (dados.origem && dados.origem !== "ESCOLA") {
+    const origem = origemInfo(dados.origem);
+    linhas.push(
+      `⚑ Convocação: ${origem.label}${dados.orgaoConvocante ? ` — ${dados.orgaoConvocante}` : ""}`,
+    );
+    if (dados.documentoReferencia) {
+      linhas.push(`📄 Referência: ${dados.documentoReferencia}`);
+    }
+  }
   linhas.push(`⚑ Responsável: ${cargo.label}${dados.responsavel ? ` — ${dados.responsavel}` : ""}`);
   if (dados.participantes) linhas.push(`👥 Participantes: ${dados.participantes}`);
   linhas.push(`🔖 Situação: ${STATUS_LABEL[dados.status] ?? dados.status}`);

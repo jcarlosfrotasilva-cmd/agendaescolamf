@@ -92,6 +92,9 @@ export function montarModelos(
     status: compromisso.status,
     prioridade: compromisso.prioridade,
     lembreteMinutos: compromisso.lembreteMinutos,
+    origem: compromisso.origem,
+    orgaoConvocante: compromisso.orgaoConvocante,
+    documentoReferencia: compromisso.documentoReferencia,
   };
 
   const modelos: Record<string, string> = {};

@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 import type { Filtros, CompromissoComGestor } from "./repo";
-import { cargoInfo, tipoLabel } from "./constants";
+import { cargoInfo, origemInfo, tipoLabel } from "./constants";
 
 export const CORS_HEADERS: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -76,6 +76,10 @@ export type AgendaPublica = {
   horaFim: string;
   prioridade: string;
   status: string;
+  origem: string;
+  origemDescricao: string;
+  orgaoConvocante: string | null;
+  documentoReferencia: string | null;
   atualizadoEm: string;
   participantes?: string | null;
   descricao?: string | null;
@@ -101,6 +105,10 @@ export function toPublico(
     horaFim: item.horaFim,
     prioridade: item.prioridade,
     status: item.status,
+    origem: item.origem,
+    origemDescricao: origemInfo(item.origem).label,
+    orgaoConvocante: item.orgaoConvocante,
+    documentoReferencia: item.documentoReferencia,
     atualizadoEm: item.atualizadoEm.toISOString(),
   };
   if (detalhado) {
