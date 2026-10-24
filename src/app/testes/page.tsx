@@ -18,6 +18,7 @@ async function urlBase() {
 }
 
 async function estadoBanco() {
+  const hojeIso = isoToday();
   const inicio = performance.now();
   const resultado = await db.execute<{
     gestores: number;
@@ -33,7 +34,7 @@ async function estadoBanco() {
       (select count(*)::int from auditoria) as auditoria,
       (select count(*)::int from api_tokens) as tokens,
       (select count(*)::int from compromissos
-         where data_inicio <= current_date and data_fim >= current_date) as hoje,
+         where data_inicio <= ${hojeIso} and data_fim >= ${hojeIso}) as hoje,
       (select count(*)::int from compromissos
          where tipo in ('REUNIAO_APM','REUNIAO_CONSELHO_ESCOLA','REUNIAO_GREMIO_ESTUDANTIL')) as colegiadas
   `);

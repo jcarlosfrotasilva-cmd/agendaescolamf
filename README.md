@@ -59,6 +59,19 @@ Para apenas conferir a configuração atual: `node scripts/configurar-banco.mjs 
 A aplicação **não cai** quando a configuração está ausente: ela responde em `/diagnostico`
 com o comando exato a executar e devolve mensagem clara no login (código `SEM_CONFIGURACAO`).
 
+## Fuso horário e datas (crítico)
+
+O servidor roda em **UTC** e a escola opera em **America/Sao_Paulo (UTC-3)**. Para evitar
+divergências, todas as decisões de data/hora usam `TZ_ESCOLA` (padrão `America/Sao_Paulo`,
+configurável por `NEXT_PUBLIC_TIMEZONE`):
+
+| Situação | Antes | Agora |
+| --- | --- | --- |
+| "Hoje" no servidor (22h no Brasil) | retornava o dia seguinte (UTC) | retorna o dia correto da escola |
+| Instante do compromisso (08:00) | 08:00 UTC = 05:00 no Brasil (lembretes 3h adiantados) | 11:00 UTC = 08:00 no Brasil |
+| Último dia do mês | `endOfMonth` perdia 1 dia em fusos negativos | retorna 28/29/30/31 corretamente |
+| Contagem de mensagens de hoje | usava `current_date` do Postgres (UTC) | usa a data da escola |
+
 ## Login: diagnóstico de falhas
 
 Sintomas e causas tratadas pelo sistema:

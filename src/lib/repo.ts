@@ -13,7 +13,7 @@ import {
   type Gestor,
   type Professor,
 } from "@/db/schema";
-import { addDays, isoToday, rangeForPeriodo } from "./datetime";
+import { TZ_ESCOLA, addDays, isoToday, rangeForPeriodo } from "./datetime";
 
 export type CompromissoComGestor = Compromisso & {
   gestorNome: string | null;
@@ -223,6 +223,7 @@ export async function listarLembretesPendentes(limite = 20) {
 }
 
 export async function resumoMensagens() {
+  const hojeIso = isoToday();
   const [linha] = await db
     .select({
       total: sql<number>`count(*)::int`,
@@ -230,7 +231,7 @@ export async function resumoMensagens() {
       geradas: sql<number>`count(*) filter (where ${mensagensWhatsapp.status} = 'GERADO')::int`,
       falhas: sql<number>`count(*) filter (where ${mensagensWhatsapp.status} = 'FALHA')::int`,
       canceladas: sql<number>`count(*) filter (where ${mensagensWhatsapp.status} = 'CANCELADO')::int`,
-      hoje: sql<number>`count(*) filter (where ${mensagensWhatsapp.criadoEm}::date = current_date)::int`,
+      hoje: sql<number>`count(*) filter (where (${mensagensWhatsapp.criadoEm} at time zone ${TZ_ESCOLA})::date = ${hojeIso})::int`,
       automaticas: sql<number>`count(*) filter (where ${mensagensWhatsapp.canal} = 'API')::int`,
     })
     .from(mensagensWhatsapp);
@@ -292,7 +293,7 @@ export async function obterResumo(): Promise<Resumo> {
       total: sql<number>`count(*)::int`,
       hoje: sql<number>`count(*) filter (where ${compromissos.dataInicio} <= ${hoje} and ${compromissos.dataFim} >= ${hoje})::int`,
       semana: sql<number>`count(*) filter (where ${compromissos.dataInicio} between ${inicio} and ${fim})::int`,
-      proximos7: sql<number>`count(*) filter (where ${compromissos.dataInicio} between ${hoje} and ${sql`(${hoje}::date + interval '7 days')`})::int`,
+      proximos7: sql<number>`count(*) filter (where ${compromissos.dataInicio} between ${hoje} and ${addDays(hoje, 7)})::int`,
       mes: sql<number>`count(*) filter (where ${compromissos.dataInicio} between ${mes.de} and ${mes.ate})::int`,
       atrasados: sql<number>`count(*) filter (where ${compromissos.status} in ('AGENDADO','CONFIRMADO','EM_ANDAMENTO') and ${compromissos.dataFim} < ${hoje})::int`,
       realizadosMes: sql<number>`count(*) filter (where ${compromissos.status} = 'REALIZADO' and ${compromissos.dataInicio} between ${mes.de} and ${mes.ate})::int`,

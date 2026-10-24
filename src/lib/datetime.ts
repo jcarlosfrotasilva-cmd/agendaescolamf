@@ -26,12 +26,85 @@ const WEEKDAY = new Intl.DateTimeFormat("pt-BR", {
   timeZone: "UTC",
 });
 
-export function isoToday(): string {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = `${now.getMonth() + 1}`.padStart(2, "0");
-  const d = `${now.getDate()}`.padStart(2, "0");
+/**
+ * FUSO OFICIAL DA ESCOLA
+ * O servidor roda em UTC; a escola opera em America/Sao_Paulo (UTC-3).
+ * Todas as decisões de "que dia é hoje" e "que horas começa" usam este fuso,
+ * independentemente de onde o processo está rodando.
+ */
+export const TZ_ESCOLA =
+  process.env.NEXT_PUBLIC_TIMEZONE ?? process.env.TZ_ESCOLA ?? "America/Sao_Paulo";
+
+const ISO_NO_FUSO = new Intl.DateTimeFormat("en-CA", {
+  timeZone: TZ_ESCOLA,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+/**
+ * Data de hoje no fuso da escola (não no fuso do processo).
+ * Corrige a virada de dia: às 22h no Brasil o UTC já está no dia seguinte.
+ */
+export function isoToday(instante: Date = new Date()): string {
+  const partes = ISO_NO_FUSO.formatToParts(instante);
+  const valor = (tipo: Intl.DateTimeFormatPartTypes) =>
+    partes.find((p) => p.type === tipo)?.value ?? "00";
+  return `${valor("year")}-${valor("month")}-${valor("day")}`;
+}
+
+/** Converte um Date em data ISO usando seus componentes UTC. */
+export function isoFromUtc(value: Date): string {
+  const y = value.getUTCFullYear();
+  const m = `${value.getUTCMonth() + 1}`.padStart(2, "0");
+  const d = `${value.getUTCDate()}`.padStart(2, "0");
   return `${y}-${m}-${d}`;
+}
+
+/**
+ * Instante real de um compromisso: data + hora **no fuso da escola**.
+ * Sem isso, no servidor (UTC) uma aula das 08:00 seria tratada como 08:00 UTC
+ * — três horas antes do horário verdadeiro — e os lembretes disparariam cedo.
+ */
+export function instanteEmFuso(
+  iso: string,
+  hora: string,
+  fuso: string = TZ_ESCOLA,
+): Date {
+  const [ano, mes, dia] = iso.split("-").map(Number);
+  const [h, min] = (/^\d{2}:\d{2}$/.test(hora) ? hora : "00:00").split(":").map(Number);
+
+  // Primeira aproximação: trata a hora como UTC.
+  const aproximado = Date.UTC(ano, (mes ?? 1) - 1, dia ?? 1, h ?? 0, min ?? 0);
+
+  // Descobre o deslocamento do fuso naquele instante e corrige.
+  try {
+    const referencia = new Date(aproximado);
+    const formatado = new Intl.DateTimeFormat("en-CA", {
+      timeZone: fuso,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    }).formatToParts(referencia);
+    const pegar = (tipo: Intl.DateTimeFormatPartTypes) =>
+      Number(formatado.find((p) => p.type === tipo)?.value ?? 0);
+    const comoFuso = Date.UTC(
+      pegar("year"),
+      pegar("month") - 1,
+      pegar("day"),
+      pegar("hour") % 24,
+      pegar("minute"),
+      pegar("second"),
+    );
+    const deslocamento = comoFuso - referencia.getTime();
+    return new Date(aproximado - deslocamento);
+  } catch {
+    return new Date(aproximado);
+  }
 }
 
 export function isoFromDate(value: Date): string {
@@ -64,7 +137,7 @@ export function fmtWeekday(iso: string): string {
 export function addDays(iso: string, days: number): string {
   const base = asDate(iso);
   base.setUTCDate(base.getUTCDate() + days);
-  return isoFromDate(base);
+  return isoFromUtc(base);
 }
 
 export function diffDays(fromIso: string, toIso: string): number {
@@ -77,8 +150,10 @@ export function startOfMonth(iso: string): string {
 
 export function endOfMonth(iso: string): string {
   const [y, m] = iso.split("-").map(Number);
-  const last = new Date(Date.UTC(y, m, 0));
-  return isoFromDate(last);
+  // Dia 0 do mês seguinte = último dia do mês desejado (meia-noite UTC).
+  // Formatação em UTC evita perder um dia em fusos negativos (Brasil, UTC-3).
+  const ultimo = new Date(Date.UTC(y, m, 0));
+  return isoFromUtc(ultimo);
 }
 
 export function weekRange(iso: string): { inicio: string; fim: string } {
@@ -111,10 +186,13 @@ export function rangeForPeriodo(
   }
 }
 
-/** Concatena data + hora locais em um Date (fuso do dispositivo). */
+/**
+ * Instante do compromisso no fuso da escola.
+ * Mantido o nome por compatibilidade: em navegador e servidor o resultado é o
+ * mesmo instante absoluto, evitando divergência de 3 horas.
+ */
 export function toLocalDate(iso: string, hora: string): Date {
-  const safeHora = /^\d{2}:\d{2}$/.test(hora) ? hora : "00:00";
-  return new Date(`${iso}T${safeHora}:00`);
+  return instanteEmFuso(iso, hora);
 }
 
 export function fmtPeriodo(
