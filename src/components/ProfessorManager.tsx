@@ -45,6 +45,7 @@ export function ProfessorManager({ professores }: { professores: ProfessorItem[]
   const [copiado, setCopiado] = useState<number | null>(null);
   const [credenciais, setCredenciais] = useState<Credenciais | null>(null);
   const [copiaOk, setCopiaOk] = useState(false);
+  const [confirmandoExclusao, setConfirmandoExclusao] = useState<number | null>(null);
   const editando = form.id > 0;
 
   async function salvar(event: React.FormEvent<HTMLFormElement>) {
@@ -77,14 +78,32 @@ export function ProfessorManager({ professores }: { professores: ProfessorItem[]
     router.refresh();
   }
 
-  async function excluir(id: number) {
-    if (!globalThis.confirm("Excluir este professor? O login de acesso também será removido.")) {
-      return;
-    }
+  /**
+   * Exclusão em dois passos, sem `confirm()` do navegador — que pode estar
+   * bloqueado em algumas configurações e fazia o botão parecer "não funcionar".
+   */
+  async function excluir(id: number, nome: string) {
     setOcupado(true);
-    await fetch(`/api/professores/${id}`, { method: "DELETE" });
-    setOcupado(false);
-    router.refresh();
+    setErro(null);
+    setAviso(null);
+    try {
+      const res = await fetch(`/api/professores/${id}`, { method: "DELETE" });
+      const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+      if (!res.ok || !data.ok) {
+        setErro(
+          data.error ??
+            `Não foi possível excluir ${nome}. Verifique se você tem permissão de gestão.`,
+        );
+        return;
+      }
+      setConfirmandoExclusao(null);
+      setAviso(`${nome} foi excluído(a). O login de acesso também foi removido.`);
+      router.refresh();
+    } catch {
+      setErro("Falha de comunicação com o servidor ao excluir. Tente novamente.");
+    } finally {
+      setOcupado(false);
+    }
   }
 
   function editar(item: ProfessorItem) {
@@ -217,14 +236,20 @@ export function ProfessorManager({ professores }: { professores: ProfessorItem[]
   }
 
   async function removerAcesso(item: ProfessorItem) {
-    if (!globalThis.confirm(`Remover o login de ${item.nome}? O cadastro do professor permanece.`)) {
-      return;
-    }
     setOcupado(true);
-    await fetch(`/api/professores/${item.id}/acesso`, { method: "DELETE" });
-    setOcupado(false);
-    setAviso("Acesso removido.");
-    router.refresh();
+    setErro(null);
+    try {
+      const res = await fetch(`/api/professores/${item.id}/acesso`, { method: "DELETE" });
+      const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+      if (!res.ok || !data.ok) {
+        setErro(data.error ?? "Não foi possível remover o acesso.");
+        return;
+      }
+      setAviso(`Login de ${item.nome} removido. O cadastro do professor permanece.`);
+      router.refresh();
+    } finally {
+      setOcupado(false);
+    }
   }
 
   async function copiarFeed(item: ProfessorItem) {
@@ -546,13 +571,41 @@ export function ProfessorManager({ professores }: { professores: ProfessorItem[]
                           >
                             Editar
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => void excluir(p.id)}
-                            className="rounded-lg bg-white px-2.5 py-1.5 text-[11px] font-semibold text-rose-600 ring-1 ring-rose-200 hover:bg-rose-50"
-                          >
-                            Excluir
-                          </button>
+                          {confirmandoExclusao === p.id ? (
+                            <span className="flex flex-wrap items-center gap-1 rounded-lg bg-rose-50 p-1 ring-1 ring-rose-300">
+                              <span className="px-1 text-[10px] font-semibold text-rose-800">
+                                Excluir {p.nome.split(" ")[0]}?
+                                {p.temAcesso ? " (login será removido)" : ""}
+                              </span>
+                              <button
+                                type="button"
+                                disabled={ocupado}
+                                onClick={() => void excluir(p.id, p.nome)}
+                                className="rounded bg-rose-600 px-2 py-1 text-[10px] font-bold text-white hover:bg-rose-700 disabled:opacity-60"
+                              >
+                                {ocupado ? "Excluindo…" : "Sim, excluir"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setConfirmandoExclusao(null)}
+                                className="rounded bg-white px-2 py-1 text-[10px] font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-100"
+                              >
+                                Cancelar
+                              </button>
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              disabled={ocupado}
+                              onClick={() => {
+                                setErro(null);
+                                setConfirmandoExclusao(p.id);
+                              }}
+                              className="rounded-lg bg-white px-2.5 py-1.5 text-[11px] font-semibold text-rose-600 ring-1 ring-rose-200 hover:bg-rose-50 disabled:opacity-60"
+                            >
+                              Excluir
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
