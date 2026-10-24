@@ -94,6 +94,12 @@ export default async function PainelPage() {
             ＋ Agendar compromisso
           </Link>
           <Link
+            href="/convocacoes"
+            className="rounded-xl bg-amber-600 px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-amber-700"
+          >
+            ⚑ Convocações externas
+          </Link>
+          <Link
             href="/agenda"
             className="rounded-xl bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 ring-1 ring-slate-300 transition hover:bg-slate-50"
           >

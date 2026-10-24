@@ -7,7 +7,7 @@ import { AgendaSemanaProfessor } from "@/components/AgendaSemanaProfessor";
 import { CompromissoLista } from "@/components/CompromissoLista";
 import { BotaoSairProfessor } from "@/components/BotaoSairProfessor";
 import { Card, StatCard } from "@/components/ui";
-import { turnoInfo } from "@/lib/constants";
+import { origemInfo, turnoInfo } from "@/lib/constants";
 import { fmtLong, isoToday } from "@/lib/datetime";
 import { ESCOLA } from "@/lib/escola";
 import { getSessao } from "@/lib/auth";
@@ -107,15 +107,68 @@ export default async function MinhaAgendaPage() {
       </header>
 
       {externas.length > 0 ? (
-        <div className="rounded-xl bg-amber-50 px-4 py-3 ring-1 ring-amber-200">
-          <p className="text-xs font-semibold text-amber-900">
-            ⚑ Você tem {externas.length} convocação(ões) externa(s)
-          </p>
-          <p className="mt-0.5 text-[11px] leading-relaxed text-amber-800">
-            Formações e reuniões convocadas por URE ou órgão central, registradas pela escola na sua
-            agenda. Confira o órgão e o documento de referência em cada compromisso.
-          </p>
-        </div>
+        <Card className="border-l-4 border-l-amber-500 p-5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p className="text-sm font-semibold text-slate-900">
+                ⚑ {externas.length} convocação(ões) recebida(s) de outro órgão
+              </p>
+              <p className="mt-0.5 text-[11px] leading-relaxed text-slate-600">
+                A gestão da escola registrou estas ações convocadas pela URE/órgão central e indicou
+                você como participante. O despertador está ativo com a antecedência definida.
+              </p>
+            </div>
+            <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-800 ring-1 ring-inset ring-amber-200">
+              participação designada
+            </span>
+          </div>
+
+          <ul className="mt-3 space-y-2">
+            {externas.map((item) => {
+              const origem = origemInfo(item.origem);
+              return (
+                <li
+                  key={item.id}
+                  className="rounded-xl bg-amber-50/60 p-3 ring-1 ring-amber-200"
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ring-1 ring-inset ${origem.chip}`}
+                    >
+                      {origem.sigla}
+                    </span>
+                    <p className="text-xs font-semibold text-slate-900">{item.titulo}</p>
+                    <span className="ml-auto rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-600 ring-1 ring-slate-200">
+                      ⏰ despertador {item.lembreteMinutos >= 1440
+                        ? "1 dia antes"
+                        : item.lembreteMinutos >= 60
+                          ? `${item.lembreteMinutos / 60}h antes`
+                          : `${item.lembreteMinutos} min antes`}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-[11px] text-slate-700">
+                    {origem.label}
+                    {item.orgaoConvocante ? ` — ${item.orgaoConvocante}` : ""}
+                  </p>
+                  <p className="text-[11px] text-slate-600">
+                    🗓️ {fmtLong(item.dataInicio)} · {item.horaInicio} às {item.horaFim} · 📍{" "}
+                    {item.local}
+                  </p>
+                  {item.documentoReferencia ? (
+                    <p className="text-[11px] text-slate-600">
+                      📄 Documento: {item.documentoReferencia}
+                    </p>
+                  ) : null}
+                  {item.descricao ? (
+                    <p className="mt-1 whitespace-pre-line text-[11px] leading-relaxed text-slate-600">
+                      {item.descricao}
+                    </p>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
+        </Card>
       ) : null}
 
       <div className="grid gap-4 sm:grid-cols-3">

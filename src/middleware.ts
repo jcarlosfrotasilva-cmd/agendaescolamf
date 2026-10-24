@@ -72,6 +72,12 @@ export async function middleware(request: NextRequest) {
 
     if (pathname.startsWith("/api/")) {
       if (pathname.startsWith("/api/auth")) return NextResponse.next();
+      // Leitura necessária para o despertador e a própria agenda (somente GET).
+      const leituraPermitida =
+        request.method === "GET" &&
+        (pathname === "/api/compromissos/despertador" ||
+          pathname.startsWith("/api/professores/") );
+      if (leituraPermitida) return NextResponse.next();
       return NextResponse.json(
         {
           ok: false,

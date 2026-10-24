@@ -16,6 +16,13 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/", label: "Painel da Gestão", icon: "◧", description: "Visão geral e indicadores" },
   { href: "/agenda", label: "Agenda", icon: "▤", description: "Compromissos por data, cargo e local" },
   { href: "/compromissos/novo", label: "Novo Compromisso", icon: "＋", description: "Agendar orientação ou reunião" },
+  {
+    href: "/convocacoes",
+    label: "Convocações Externas",
+    icon: "⚑",
+    description: "URE e órgão central: designar docente",
+    papeis: ["ADMIN", "GESTAO", "LEITURA"],
+  },
   { href: "/gestores", label: "Gestores / Cargos", icon: "⚑", description: "Equipe de gestão escolar" },
   { href: "/professores", label: "Professores", icon: "👩‍🏫", description: "Corpo docente e agenda de cada professor" },
   { href: "/locais", label: "Locais", icon: "⌂", description: "Espaços e salas utilizadas" },

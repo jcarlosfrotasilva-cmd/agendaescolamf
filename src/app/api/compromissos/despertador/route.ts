@@ -1,9 +1,10 @@
-import { and, asc, eq, gte, inArray, lte } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, lte, or, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { compromissos, gestores } from "@/db/schema";
+import { compromissoProfessores, compromissos, gestores } from "@/db/schema";
 import { json, serverError } from "@/lib/api";
 import { addDays, isoToday } from "@/lib/datetime";
 import type { AlarmeItem } from "@/lib/types";
+import { getSessao, ehProfessor } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,15 @@ export const dynamic = "force-dynamic";
  */
 export async function GET() {
   try {
+    const sessao = await getSessao();
+
+    // PROFESSOR: recebe apenas as próprias convocações e os compromissos
+    // coletivos da escola — nunca a agenda de colegas ou da gestão.
+    const apenasDoProfessor =
+      sessao && ehProfessor(sessao.papel) && sessao.professorId
+        ? Number(sessao.professorId)
+        : null;
+
     const hoje = isoToday();
     const linhas = await db
       .select({
@@ -42,6 +52,21 @@ export async function GET() {
           inArray(compromissos.status, ["AGENDADO", "CONFIRMADO", "EM_ANDAMENTO", "ADIADO"]),
           gte(compromissos.dataFim, addDays(hoje, -1)),
           lte(compromissos.dataInicio, addDays(hoje, 8)),
+          apenasDoProfessor
+            ? or(
+                // convocado nominalmente
+                sql`exists (
+                  select 1 from ${compromissoProfessores} cp
+                  where cp.compromisso_id = ${compromissos.id}
+                    and cp.professor_id = ${apenasDoProfessor}
+                )`,
+                // compromisso coletivo da escola (sem convocação nominal)
+                sql`not exists (
+                  select 1 from ${compromissoProfessores} cp
+                  where cp.compromisso_id = ${compromissos.id}
+                )`,
+              )
+            : undefined,
         ),
       )
       .orderBy(asc(compromissos.dataInicio), asc(compromissos.horaInicio))

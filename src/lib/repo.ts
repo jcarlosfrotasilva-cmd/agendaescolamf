@@ -457,6 +457,48 @@ export async function listarAgendaDaEscola(limiteDias = 120) {
     }));
 }
 
+/** Convocações recebidas de fora da escola (URE, órgão central, outros). */
+export async function listarConvocacoesExternas(limite = 100) {
+  const rows = await db
+    .select({
+      compromisso: compromissos,
+      gestorNome: gestores.nome,
+      gestorCargo: gestores.cargo,
+      gestorTelefone: gestores.telefone,
+      docentes: sql<string | null>`(
+        select string_agg(p.nome, ', ' order by p.nome)
+        from ${compromissoProfessores} cp
+        join professores p on p.id = cp.professor_id
+        where cp.compromisso_id = ${compromissos.id}
+      )`,
+      totalDocentes: sql<number>`(
+        select count(*)::int from ${compromissoProfessores} cp
+        where cp.compromisso_id = ${compromissos.id}
+      )`,
+      notificados: sql<number>`(
+        select count(distinct m.professor_id)::int from ${mensagensWhatsapp} m
+        where m.compromisso_id = ${compromissos.id}
+          and m.professor_id is not null
+          and m.status = 'ENVIADO'
+      )`,
+    })
+    .from(compromissos)
+    .leftJoin(gestores, eq(compromissos.gestorId, gestores.id))
+    .where(sql`${compromissos.origem} <> 'ESCOLA'`)
+    .orderBy(desc(compromissos.dataInicio))
+    .limit(limite);
+
+  return rows.map((r) => ({
+    ...r.compromisso,
+    gestorNome: r.gestorNome ?? null,
+    gestorCargo: r.gestorCargo ?? null,
+    gestorTelefone: r.gestorTelefone ?? null,
+    docentes: r.docentes,
+    totalDocentes: r.totalDocentes,
+    notificados: r.notificados,
+  }));
+}
+
 /** Sincroniza as convocações de professores de um compromisso. */
 export async function definirProfessoresDoCompromisso(
   compromissoId: number,
