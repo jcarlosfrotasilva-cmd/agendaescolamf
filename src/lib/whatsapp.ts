@@ -185,6 +185,8 @@ export function montarMensagem(
     `Olá, ${destinatario}!`,
   ];
 
+  const externa = Boolean(dados.origem && dados.origem !== "ESCOLA");
+
   const abertura: Record<FinalidadeKey, string> = {
     CONVITE: "Você tem um novo compromisso registrado na agenda da gestão:",
     LEMBRETE: "Passando para lembrar do seu compromisso que está próximo:",
@@ -200,16 +202,19 @@ export function montarMensagem(
   linhas.push(`📝 Assunto: ${dados.assunto}`);
   linhas.push(`📅 ${periodo}`);
   linhas.push(`📍 Local: ${dados.local}`);
-  if (dados.origem && dados.origem !== "ESCOLA") {
-    const origem = origemInfo(dados.origem);
+  if (externa) {
+    const origem = origemInfo(dados.origem as string);
     linhas.push(
       `⚑ Convocação: ${origem.label}${dados.orgaoConvocante ? ` — ${dados.orgaoConvocante}` : ""}`,
     );
-    if (dados.documentoReferencia) {
-      linhas.push(`📄 Referência: ${dados.documentoReferencia}`);
-    }
+  } else {
+    linhas.push(
+      `⚑ Responsável: ${cargo.label}${dados.responsavel ? ` — ${dados.responsavel}` : ""}`,
+    );
   }
-  linhas.push(`⚑ Responsável: ${cargo.label}${dados.responsavel ? ` — ${dados.responsavel}` : ""}`);
+  if (externa && dados.documentoReferencia) {
+    linhas.push(`📄 Referência: ${dados.documentoReferencia}`);
+  }
   if (dados.participantes) linhas.push(`👥 Participantes: ${dados.participantes}`);
   linhas.push(`🔖 Situação: ${STATUS_LABEL[dados.status] ?? dados.status}`);
 

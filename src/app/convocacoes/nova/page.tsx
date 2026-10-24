@@ -93,6 +93,7 @@ export default async function NovaConvocacaoPage({
         }))}
         inicial={{
           origem: origemSelecionada,
+          cargoResponsavel: "ORGAO_EXTERNO",
           tipo: "FORMACAO",
           titulo: "Ação Formativa URE",
           assunto: "Formação convocada pela Unidade Regional de Ensino",

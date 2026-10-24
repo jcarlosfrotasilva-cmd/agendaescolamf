@@ -2,7 +2,8 @@ export type CargoKey =
   | "DIRETOR"
   | "VICE_DIRETOR"
   | "COORDENADOR_PEDAGOGICO"
-  | "GERENTE_ORGANIZACAO";
+  | "GERENTE_ORGANIZACAO"
+  | "ORGAO_EXTERNO";
 
 export type CargoInfo = {
   key: CargoKey;
@@ -62,6 +63,18 @@ export const CARGOS: CargoInfo[] = [
     ring: "ring-amber-200",
     descricao:
       "Rotinas administrativas, horários, infraestrutura, documentação e fluxo escolar.",
+  },
+  {
+    key: "ORGAO_EXTERNO",
+    label: "Órgão externo (URE / central)",
+    short: "Órgão externo",
+    sigla: "EX",
+    accent: "from-amber-600 to-orange-600",
+    dot: "bg-amber-600",
+    chip: "bg-amber-50 text-amber-800 ring-amber-200",
+    ring: "ring-amber-200",
+    descricao:
+      "Convocação originada fora da escola (URE, órgão central ou outra instituição).",
   },
 ];
 

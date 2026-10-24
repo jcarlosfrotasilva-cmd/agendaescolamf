@@ -80,7 +80,9 @@ export function CompromissoCard({
         </div>
 
         <div className="flex shrink-0 flex-col items-end gap-2">
-          <CargoBadge cargo={item.cargoResponsavel} compact />
+          {item.origem && item.origem !== "ESCOLA" ? null : (
+            <CargoBadge cargo={item.cargoResponsavel} compact />
+          )}
           <div className="flex items-center gap-1.5">
             <Link
               href={`/compromissos/${item.id}`}

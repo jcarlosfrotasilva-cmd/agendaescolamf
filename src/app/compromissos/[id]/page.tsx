@@ -156,17 +156,27 @@ export default async function CompromissoDetalhePage({
             </div>
             <div className="rounded-xl bg-slate-50 px-3.5 py-3 ring-1 ring-slate-200">
               <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-                Responsável
+                {item.origem && item.origem !== "ESCOLA" ? "Convocado por" : "Responsável"}
               </p>
               <p className="text-sm font-semibold text-slate-800">
-                {item.gestorNome ?? info.short}
+                {item.origem && item.origem !== "ESCOLA"
+                  ? (item.orgaoConvocante ?? origemInfo(item.origem).label)
+                  : (item.gestorNome ?? info.short)}
               </p>
-              <p className="text-[11px] text-slate-500">{info.label}</p>
+              <p className="text-[11px] text-slate-500">
+                {item.origem && item.origem !== "ESCOLA"
+                  ? item.documentoReferencia
+                    ? `Documento: ${item.documentoReferencia}`
+                    : origemInfo(item.origem).label
+                  : info.label}
+              </p>
             </div>
           </div>
 
           <div className="mt-4 flex flex-wrap items-center gap-2">
-            <CargoBadge cargo={item.cargoResponsavel} />
+            {item.origem && item.origem !== "ESCOLA" ? null : (
+              <CargoBadge cargo={item.cargoResponsavel} />
+            )}
             <Link
               href={`/agenda?cargo=${item.cargoResponsavel}&periodo=TODOS`}
               className="rounded-full bg-white px-3 py-1 text-[11px] font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"

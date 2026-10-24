@@ -113,6 +113,9 @@ export function CompromissoForm({
     [gestores, valores.cargoResponsavel],
   );
 
+  /** Convocação externa (URE / órgão central): não há cargo nem gestor da escola. */
+  const externo = valores.origem !== "ESCOLA";
+
   const duracao = duracaoMinutos(
     valores.dataInicio,
     valores.dataFim,
@@ -140,8 +143,8 @@ export function CompromissoForm({
       tipo: valores.tipo,
       assunto: valores.assunto,
       descricao: valores.descricao,
-      cargoResponsavel: valores.cargoResponsavel,
-      gestorId: valores.gestorId ? Number(valores.gestorId) : null,
+      cargoResponsavel: externo ? "ORGAO_EXTERNO" : valores.cargoResponsavel,
+      gestorId: externo ? null : valores.gestorId ? Number(valores.gestorId) : null,
       dataInicio: valores.dataInicio,
       dataFim: valores.dataFim,
       horaInicio: valores.horaInicio,
@@ -382,7 +385,15 @@ export function CompromissoForm({
                 <button
                   key={origem.key}
                   type="button"
-                  onClick={() => set("origem", origem.key)}
+                  onClick={() => {
+                    set("origem", origem.key);
+                    // Convocação externa não tem cargo/gestor da escola.
+                    set(
+                      "cargoResponsavel",
+                      origem.key === "ESCOLA" ? "COORDENADOR_PEDAGOGICO" : "ORGAO_EXTERNO",
+                    );
+                    set("gestorId", "");
+                  }}
                   title={origem.descricao}
                   className={`rounded-lg px-2.5 py-2 text-left ring-1 transition ${
                     ativo
@@ -504,10 +515,12 @@ export function CompromissoForm({
           </span>
           <div>
             <h2 className="text-sm font-semibold text-slate-900">
-              Data, hora, local e responsável
+              {externo ? "Data, hora e local da ação" : "Data, hora, local e responsável"}
             </h2>
             <p className="text-xs text-slate-500">
-              O compromisso pode se estender por vários dias (data de início e data fim).
+              {externo
+                ? "Dados informados pelo órgão convocante. A convocação pode se estender por vários dias."
+                : "O compromisso pode se estender por vários dias (data de início e data fim)."}
             </p>
           </div>
         </div>
@@ -550,45 +563,65 @@ export function CompromissoForm({
             />
           </Field>
 
-          <Field
-            label="Cargo responsável"
-            className="sm:col-span-2"
-            hint="Cargo que responde pelo compromisso na agenda da gestão."
-          >
-            <select
-              className={selectClass}
-              value={valores.cargoResponsavel}
-              onChange={(event) => {
-                set("cargoResponsavel", event.target.value);
-                set("gestorId", "");
-              }}
-            >
-              {CARGOS.map((c) => (
-                <option key={c.key} value={c.key}>
-                  {c.label}
-                </option>
-              ))}
-            </select>
-          </Field>
+          {externo ? (
+            <div className="sm:col-span-2 rounded-xl bg-amber-50 px-3.5 py-3 ring-1 ring-amber-200">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-800">
+                Convocação externa
+              </p>
+              <p className="mt-0.5 text-[11px] leading-relaxed text-amber-900">
+                A responsabilidade pela convocação é de{" "}
+                <strong>
+                  {valores.orgaoConvocante ||
+                    ORIGENS.find((o) => o.key === valores.origem)?.label ||
+                    "órgão externo"}
+                </strong>
+                . Por isso não há cargo nem gestor da escola neste compromisso — ele entra na agenda
+                da gestão como convocação recebida e na agenda exclusiva do docente designado.
+              </p>
+            </div>
+          ) : (
+            <>
+              <Field
+                label="Cargo responsável"
+                className="sm:col-span-2"
+                hint="Cargo que responde pelo compromisso na agenda da gestão."
+              >
+                <select
+                  className={selectClass}
+                  value={valores.cargoResponsavel}
+                  onChange={(event) => {
+                    set("cargoResponsavel", event.target.value);
+                    set("gestorId", "");
+                  }}
+                >
+                  {CARGOS.map((c) => (
+                    <option key={c.key} value={c.key}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+              </Field>
 
-          <Field
-            label="Gestor(a) responsável"
-            className="sm:col-span-2"
-            hint="Opcional — ajuda na organização por servidor."
-          >
-            <select
-              className={selectClass}
-              value={valores.gestorId}
-              onChange={(event) => set("gestorId", event.target.value)}
-            >
-              <option value="">Selecione (opcional)</option>
-              {gestoresDoCargo.map((g) => (
-                <option key={g.id} value={g.id}>
-                  {g.nome}
-                </option>
-              ))}
-            </select>
-          </Field>
+              <Field
+                label="Gestor(a) responsável"
+                className="sm:col-span-2"
+                hint="Opcional — ajuda na organização por servidor."
+              >
+                <select
+                  className={selectClass}
+                  value={valores.gestorId}
+                  onChange={(event) => set("gestorId", event.target.value)}
+                >
+                  <option value="">Selecione (opcional)</option>
+                  {gestoresDoCargo.map((g) => (
+                    <option key={g.id} value={g.id}>
+                      {g.nome}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            </>
+          )}
 
           <Field label="Local" className="sm:col-span-2">
             <input
