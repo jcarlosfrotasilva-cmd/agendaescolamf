@@ -18,14 +18,14 @@ export function BotaoSair({ papel }: { papel: string }) {
 
   return (
     <div className="mt-2.5 flex items-center justify-between gap-2 border-t border-white/10 pt-2.5">
-      <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
+      <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 ring-1 ring-emerald-200">
         {info?.label ?? papel}
       </span>
       <button
         type="button"
         onClick={() => void sair()}
         disabled={saindo}
-        className="rounded-lg bg-white/10 px-2.5 py-1 text-[10px] font-semibold text-white transition hover:bg-white/20 disabled:opacity-60"
+        className="rounded-lg bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white transition hover:bg-slate-800 disabled:opacity-60"
       >
         {saindo ? "saindo…" : "Sair"}
       </button>

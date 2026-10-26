@@ -59,6 +59,22 @@ Para apenas conferir a configuração atual: `node scripts/configurar-banco.mjs 
 A aplicação **não cai** quando a configuração está ausente: ela responde em `/diagnostico`
 com o comando exato a executar e devolve mensagem clara no login (código `SEM_CONFIGURACAO`).
 
+## Validação de telefone (WhatsApp)
+
+Os números são validados em `src/lib/telefone.ts` antes de gerar qualquer link `wa.me`:
+
+- **DDD válido** (11–99), celular com **9 dígitos iniciando por 9**, fixo com 8 dígitos (2–5);
+- aceita `+55`, `55`, zero inicial e máscaras — mas **nunca adivinha**: número com dígito a mais
+  ou a menos é **recusado** com explicação em português;
+- números de outros países só são aceitos com `+` explícito (ex.: `+1 555…`), o que evita
+  interpretar um DDD brasileiro como código de país;
+- a validação vale no **cadastro** (gestores e professores), no **envio** e no **composer**, que
+  mostra o número formatado antes de abrir o WhatsApp.
+
+> Caso real: `(16)9976267156` (12 dígitos) virava `wa.me/169976267156` e o WhatsApp lia o `1`
+> inicial como EUA, exibindo “+1 69976267156 não está no WhatsApp”. Hoje o sistema informa o erro
+> e pede a correção do cadastro.
+
 ## Fuso horário e datas (crítico)
 
 O servidor roda em **UTC** e a escola opera em **America/Sao_Paulo (UTC-3)**. Para evitar
@@ -189,6 +205,21 @@ pauta e links de detalhe/`.ics`.
   2. *Disparo automático (servidor)* — com um provedor de API configurado, o sistema envia sozinho,
      sem clique: convite ao agendar, lembrete do despertador na antecedência definida e aviso de
      alteração após edição do compromisso.
+
+### Ativar o envio automático pela interface (recomendado)
+
+Não é preciso terminal nem editar arquivos: abra **Mensagens WhatsApp → ⚙ Ativar envio
+automático** (ou `/whatsapp/configurar`) e:
+
+1. escolha o provedor (Z-API vem marcado como "mais fácil");
+2. cole as credenciais;
+3. clique em **Validar e ativar** — o sistema consulta o provedor e **só grava se as credenciais
+   forem válidas** (se errar, nada é alterado);
+4. envie uma **mensagem de teste** para o seu celular.
+
+A configuração é gravada em `config/producao.json` **e** aplicada no processo na hora — o envio
+passa a ser automático sem reiniciar o servidor. A tela também permite **desativar** e voltar ao
+link manual.
 
 ### Disparo automático (sem intervenção humana)
 

@@ -14,7 +14,12 @@
   --color-brand-600: #4f46e5;
   --color-brand-700: #4338ca;
   --color-brand-900: #312e81;
-  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px -12px rgba(15, 23, 42, 0.18);
+  --shadow-card: 0 1px 2px rgba(30, 41, 59, 0.04), 0 10px 28px -14px rgba(30, 41, 59, 0.16);
+  /* Paleta de superfícies — troque o fundo em um só lugar */
+  --color-fundo: #f4f7f6;
+  --color-fundo-alt: #eef4f3;
+  --color-texto: #1e2a2b;
+  --color-superficie: #ffffff;
 }
 
 html {
@@ -23,11 +28,13 @@ html {
 
 body {
   font-family: var(--font-sans);
-  background-color: #f6f7fb;
+  /* Fundo suave em tom de névoa azul-esverdeada, agradável para longas jornadas */
+  background-color: var(--color-fundo);
   background-image:
-    radial-gradient(1000px 500px at 100% -10%, rgba(99, 102, 241, 0.1), transparent 60%),
-    radial-gradient(800px 400px at -10% 10%, rgba(16, 185, 129, 0.08), transparent 55%);
+    radial-gradient(1200px 600px at 100% -15%, rgba(129, 140, 248, 0.07), transparent 62%),
+    radial-gradient(900px 500px at -10% 5%, rgba(45, 212, 191, 0.06), transparent 58%);
   background-attachment: fixed;
+  color: var(--color-texto);
 }
 
 ::selection {
@@ -51,9 +58,50 @@ body {
   background-clip: content-box;
 }
 
+/**
+ * TEMAS DE FUNDO
+ * O atributo `data-tema` no <html> troca apenas as superfícies, preservando
+ * contraste e legibilidade. Escolha em "Aparência" no menu lateral.
+ */
+html[data-tema="nevoa"] {
+  --color-fundo: #f4f7f6;
+  --color-fundo-alt: #eef4f3;
+  --color-texto: #1e2a2b;
+}
+
+html[data-tema="areia"] {
+  --color-fundo: #f8f5ef;
+  --color-fundo-alt: #f2ede3;
+  --color-texto: #2a2620;
+  background-image: none;
+}
+
+html[data-tema="azul"] {
+  --color-fundo: #f1f5fa;
+  --color-fundo-alt: #e8eff8;
+  --color-texto: #1c2733;
+}
+
+html[data-tema="lavanda"] {
+  --color-fundo: #f5f3fb;
+  --color-fundo-alt: #ede9f8;
+  --color-texto: #272235;
+}
+
+html[data-tema="branco"] {
+  --color-fundo: #f7f8f9;
+  --color-fundo-alt: #f1f3f4;
+  --color-texto: #1f2426;
+}
+
+html[data-tema="areia"] body,
+html[data-tema="lavanda"] body {
+  background-image: none;
+}
+
 @utility card-surface {
   border-radius: 1rem;
-  background-color: #fff;
+  background-color: var(--color-superficie);
   box-shadow: var(--shadow-card);
   --tw-ring-color: rgb(226 232 240);
   box-shadow:

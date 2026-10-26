@@ -341,12 +341,12 @@ export function AlarmCenter() {
       <div className="no-print fixed bottom-4 right-4 z-[60] flex flex-col items-end gap-2 sm:bottom-6 sm:right-6">
         {painelAberto ? (
           <div className="w-[330px] animate-overlay-in overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200">
-            <div className="flex items-center justify-between gap-2 bg-gradient-to-r from-slate-900 to-indigo-900 px-4 py-3 text-white">
+            <div className="flex items-center justify-between gap-2 border-b border-slate-200 bg-slate-50 px-4 py-3">
               <div className="flex items-center gap-2">
                 <span className="text-base">⏰</span>
                 <div>
-                  <p className="text-xs font-semibold">Despertador de compromissos</p>
-                  <p className="text-[10px] text-slate-300">
+                  <p className="text-xs font-semibold text-slate-900">Despertador de compromissos</p>
+                  <p className="text-[10px] text-slate-500">
                     {somLigado ? "Som ativo" : "Som silenciado"} · verificação a cada 30s
                   </p>
                 </div>
@@ -354,7 +354,7 @@ export function AlarmCenter() {
               <button
                 type="button"
                 onClick={() => setPainelAberto(false)}
-                className="rounded-full bg-white/10 px-2 py-0.5 text-xs text-white hover:bg-white/20"
+                className="rounded-full bg-white px-2 py-0.5 text-xs text-slate-600 ring-1 ring-slate-200 hover:bg-slate-100"
               >
                 ✕
               </button>

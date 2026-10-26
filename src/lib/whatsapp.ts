@@ -72,48 +72,15 @@ export function finalidadeInfo(key: string) {
 }
 
 /**
- * Normaliza o telefone para o padrão aceito pelo WhatsApp (somente dígitos,
- * com código do país). No Brasil, aplica o DDI 55 quando ausente.
+ * Normalização centralizada em `lib/telefone.ts`.
+ * Mantida aqui por compatibilidade com os módulos que já importavam daqui.
  */
-export function normalizarTelefone(valor: string | null | undefined): string | null {
-  if (!valor) return null;
-  let digitos = valor.replace(/\D/g, "");
-  if (digitos.length === 0) return null;
-
-  // Remove zeros de operadora/DDD longa distância no início
-  while (digitos.startsWith("0")) digitos = digitos.slice(1);
-
-  if (digitos.startsWith("55")) {
-    return digitos.length >= 12 && digitos.length <= 13 ? digitos : null;
-  }
-  if (digitos.length === 10 || digitos.length === 11) {
-    return `55${digitos}`;
-  }
-  return digitos.length >= 12 ? digitos : null;
-}
-
-export function telefoneFormatado(valor: string | null | undefined): string {
-  const normalizado = normalizarTelefone(valor);
-  if (!normalizado) return valor?.trim() || "sem telefone";
-  const nacional = normalizado.startsWith("55") ? normalizado.slice(2) : normalizado;
-  if (nacional.length === 11) {
-    return `(${nacional.slice(0, 2)}) ${nacional.slice(2, 7)}-${nacional.slice(7)}`;
-  }
-  if (nacional.length === 10) {
-    return `(${nacional.slice(0, 2)}) ${nacional.slice(2, 6)}-${nacional.slice(6)}`;
-  }
-  return `+${normalizado}`;
-}
-
-/** Gera o link wa.me (click-to-chat) já com a mensagem codificada. */
-export function linkWhatsApp(
-  telefone: string | null | undefined,
-  mensagem: string,
-): string | null {
-  const numero = normalizarTelefone(telefone);
-  if (!numero) return null;
-  return `https://wa.me/${numero}?text=${encodeURIComponent(mensagem)}`;
-}
+export {
+  analisarTelefone,
+  normalizarTelefone,
+  telefoneFormatado,
+  linkWhatsApp,
+} from "./telefone";
 
 export type DadosMensagem = {
   titulo: string;

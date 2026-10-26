@@ -26,6 +26,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/gestores", label: "Gestores / Cargos", icon: "⚑", description: "Equipe de gestão escolar" },
   { href: "/professores", label: "Professores", icon: "👩‍🏫", description: "Corpo docente e agenda de cada professor" },
   { href: "/locais", label: "Locais", icon: "⌂", description: "Espaços e salas utilizadas" },
+  { href: "/aparencia", label: "Aparência", icon: "🎨", description: "Cor de fundo das telas" },
   { href: "/mensagens", label: "Mensagens WhatsApp", icon: "💬", description: "Convites, lembretes e registros de envio" },
   { href: "/consulta", label: "Consulta Online", icon: "◎", description: "Banco externo para consulta" },
   { href: "/api-publica", label: "API Externa", icon: "⌗", description: "Integração com outras plataformas" },
@@ -105,26 +106,26 @@ export function NavLinks({
             href={item.href}
             className={`group relative flex items-start gap-3 rounded-xl px-3 py-2.5 text-sm transition ${
               active
-                ? "bg-white/12 text-white ring-1 ring-white/15"
-                : "text-slate-300/90 hover:bg-white/8 hover:text-white"
+                ? "bg-indigo-50 text-indigo-900 ring-1 ring-indigo-200"
+                : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
             }`}
           >
             <span
               aria-hidden
               className={`mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-lg text-[13px] transition ${
-                active ? "bg-white/20 text-white" : "bg-white/8 text-slate-300 group-hover:bg-white/15"
+                active ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-500 group-hover:bg-slate-200"
               }`}
             >
               {item.icon}
             </span>
             <span className="min-w-0">
               <span className="block font-semibold leading-tight">{item.label}</span>
-              <span className="mt-0.5 block text-[11px] leading-tight text-slate-400 group-hover:text-slate-300">
+              <span className="mt-0.5 block text-[11px] leading-tight text-slate-500 group-hover:text-slate-600">
                 {item.description}
               </span>
             </span>
             {active ? (
-              <span className="absolute left-0 top-1/2 h-6 w-[3px] -translate-y-1/2 rounded-r bg-gradient-to-b from-indigo-300 to-emerald-300" />
+              <span className="absolute left-0 top-1/2 h-6 w-[3px] -translate-y-1/2 rounded-r bg-gradient-to-b from-indigo-500 to-teal-500" />
             ) : null}
           </Link>
         );

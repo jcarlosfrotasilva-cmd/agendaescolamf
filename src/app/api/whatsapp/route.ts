@@ -7,6 +7,7 @@ import { badRequest, baseUrlFrom, json, notFound, serverError } from "@/lib/api"
 import {
   cloudApiConfigurada,
   descricaoProvedorAtivo,
+  analisarTelefone,
   linkWhatsApp,
   montarMensagem,
   normalizarTelefone,
@@ -106,12 +107,14 @@ export async function POST(request: NextRequest) {
       telefone = compromisso.gestorTelefone ?? "";
     }
 
-    const numero = normalizarTelefone(telefone);
-    if (!numero) {
+    const analise = analisarTelefone(telefone);
+    if (!analise.ok) {
       return badRequest(
-        "Telefone inválido ou não cadastrado. Informe DDD + número (ex.: (11) 98812-4477) no cadastro do gestor.",
+        `Telefone inválido${telefone ? ` (“${telefone}”)` : ""}: ${analise.motivo} ` +
+          "Corrija o cadastro em Gestores/Professores ou use a opção “Outro número” na tela do compromisso.",
       );
     }
+    const numero = analise.numero;
 
     const baseUrl = baseUrlFrom(request);
     const mensagem =

@@ -19,7 +19,7 @@ export function BotaoSairProfessor() {
       type="button"
       onClick={() => void sair()}
       disabled={saindo}
-      className="rounded-xl bg-white/10 px-3.5 py-2 text-[11px] font-semibold text-white ring-1 ring-white/20 transition hover:bg-white/20 disabled:opacity-60"
+      className="rounded-xl bg-white px-3.5 py-2 text-[11px] font-semibold text-slate-700 ring-1 ring-slate-300 transition hover:bg-slate-50 disabled:opacity-60"
     >
       {saindo ? "Saindo…" : "Sair da conta"}
     </button>

@@ -13,22 +13,22 @@ export default async function ConfigurarPage() {
   const jaConfigurado = !configuracaoAusente;
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950 px-4 py-8 text-white sm:px-8">
+    <div className="min-h-screen">
+      <header className="border-b border-slate-200 bg-gradient-to-br from-indigo-50 via-white to-teal-50 px-4 py-8 sm:px-8">
         <div className="mx-auto max-w-[900px]">
           <div className="flex items-center gap-3">
             <span className="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-indigo-400 to-emerald-400 text-[10px] font-bold text-slate-900">
               {ESCOLA.sigla}
             </span>
             <div>
-              <p className="text-xs font-semibold">{ESCOLA.nome}</p>
-              <p className="text-[11px] text-slate-400">Configuração do banco de dados</p>
+              <p className="text-xs font-semibold text-slate-900">{ESCOLA.nome}</p>
+              <p className="text-[11px] text-slate-500">Configuração do banco de dados</p>
             </div>
           </div>
-          <h1 className="mt-5 text-2xl font-semibold tracking-tight">
+          <h1 className="mt-5 text-2xl font-semibold tracking-tight text-slate-900">
             Conectar ao Supabase em uma tela
           </h1>
-          <p className="mt-1 max-w-2xl text-sm text-slate-300">
+          <p className="mt-1 max-w-2xl text-sm text-slate-600">
             Cole a connection string do projeto, teste a conexão e crie as tabelas automaticamente.
             A configuração é gravada no servidor — sem precisar de terminal.
           </p>

@@ -68,37 +68,38 @@ export default async function MinhaAgendaPage() {
 
   return (
     <div className="space-y-5">
-      <header className="overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950 p-5 text-white shadow-xl">
+      <header className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-teal-50 via-white to-indigo-50 p-5 shadow-sm ring-1 ring-slate-200">
+        <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-teal-200/40 blur-3xl" />
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-300">
+            <p className="relative text-[11px] font-semibold uppercase tracking-[0.18em] text-teal-700">
               {ESCOLA.nome} · Agenda do professor
             </p>
-            <h1 className="mt-1 text-2xl font-semibold tracking-tight">{professor.nome}</h1>
+            <h1 className="relative mt-1 text-2xl font-semibold tracking-tight text-slate-900">{professor.nome}</h1>
             <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
               <span className={`rounded-full px-2.5 py-1 font-semibold ${turno.chip}`}>
                 Turno {turno.label}
               </span>
               {professor.disciplina ? (
-                <span className="rounded-full bg-white/10 px-2.5 py-1 font-semibold">
+                <span className="rounded-full bg-white/70 px-2.5 py-1 font-semibold text-slate-700 ring-1 ring-slate-200">
                   📚 {professor.disciplina}
                 </span>
               ) : null}
               {professor.turmas ? (
-                <span className="rounded-full bg-white/10 px-2.5 py-1 font-semibold">
+                <span className="rounded-full bg-white/70 px-2.5 py-1 font-semibold text-slate-700 ring-1 ring-slate-200">
                   🏫 {professor.turmas}
                 </span>
               ) : null}
-              <span className="rounded-full bg-white/10 px-2.5 py-1 font-semibold text-slate-200">
+              <span className="rounded-full bg-white/70 px-2.5 py-1 font-semibold text-slate-600 ring-1 ring-slate-200">
                 Sessão: {sessao.email}
               </span>
             </div>
           </div>
-          <div className="flex flex-col items-end gap-2">
+          <div className="relative flex flex-col items-end gap-2">
             <BotaoSairProfessor />
             <Link
               href="/minha-senha"
-              className="text-[11px] font-semibold text-emerald-300 hover:text-emerald-200"
+              className="text-[11px] font-semibold text-teal-700 hover:text-teal-800"
             >
               🔑 Alterar minha senha
             </Link>

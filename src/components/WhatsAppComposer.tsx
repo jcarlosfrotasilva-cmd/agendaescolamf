@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FINALIDADES, finalidadeInfo } from "@/lib/whatsapp";
+import { analisarTelefone } from "@/lib/telefone";
 import { selectClass } from "./ui";
 
 export type DestinatarioOpcao = {
@@ -193,7 +194,9 @@ export function WhatsAppComposer({
     }
   }, [mensagem]);
 
+  const analiseTelefone = analisarTelefone(destinatarioAtual.telefone);
   const semTelefone = !destinatarioAtual.telefone;
+  const telefoneInvalido = Boolean(destinatarioAtual.telefone) && !analiseTelefone.ok;
 
   return (
     <div className="space-y-4">
@@ -263,6 +266,27 @@ export function WhatsAppComposer({
         </div>
       ) : null}
 
+      {telefoneInvalido ? (
+        <div className="rounded-xl bg-rose-50 px-3.5 py-2.5 ring-1 ring-rose-200">
+          <p className="text-[11px] font-semibold text-rose-800">
+            Telefone cadastrado inválido — não é possível abrir o WhatsApp
+          </p>
+          <p className="mt-0.5 text-[11px] leading-relaxed text-rose-700">
+            “{destinatarioAtual.telefone}”: {!analiseTelefone.ok ? analiseTelefone.motivo : ""}
+          </p>
+          <p className="mt-1 text-[11px] leading-relaxed text-rose-700">
+            Corrija em <strong>Gestores</strong> ou <strong>Professores</strong>, ou escolha{" "}
+            <strong>“Outro número”</strong> e digite o número correto (ex.: 16 99762-6715).
+          </p>
+        </div>
+      ) : analiseTelefone.ok ? (
+        <p className="rounded-lg bg-slate-50 px-3 py-1.5 text-[11px] text-slate-600 ring-1 ring-slate-200">
+          Será enviado para{" "}
+          <strong className="font-semibold text-slate-800">{analiseTelefone.formatado}</strong>
+          {analiseTelefone.tipo === "fixo" ? " (telefone fixo — WhatsApp pode não existir)" : ""}
+        </p>
+      ) : null}
+
       {semTelefone && destinatarioId !== "avulso" ? (
         <p className="rounded-xl bg-amber-50 px-3.5 py-2.5 text-[11px] font-medium text-amber-800 ring-1 ring-amber-200">
           Este gestor ainda não tem telefone cadastrado. Cadastre em <strong>Gestores</strong> com
@@ -298,7 +322,7 @@ export function WhatsAppComposer({
       <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
-          disabled={ocupado || semTelefone}
+          disabled={ocupado || semTelefone || telefoneInvalido}
           onClick={() => void preparar(false)}
           className="inline-flex items-center gap-2 rounded-xl bg-[#25D366] px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:brightness-95 disabled:opacity-60"
         >
@@ -308,7 +332,7 @@ export function WhatsAppComposer({
         {apiAutomatica ? (
           <button
             type="button"
-            disabled={ocupado || semTelefone}
+            disabled={ocupado || semTelefone || telefoneInvalido}
             onClick={() => void preparar(true)}
             className="rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-slate-800 disabled:opacity-60"
           >

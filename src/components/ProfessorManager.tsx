@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { TIPOS_DOCENTES, TURNOS, tipoInfo } from "@/lib/constants";
+import { analisarTelefone } from "@/lib/telefone";
 import { Field, inputClass, selectClass } from "./ui";
 
 export type ProfessorItem = {
@@ -228,9 +229,15 @@ export function ProfessorManager({ professores }: { professores: ProfessorItem[]
       .filter(Boolean)
       .join("\n");
 
-    const numero = (credenciais.telefone ?? "").replace(/\D/g, "");
-    const link = numero
-      ? `https://wa.me/${numero.startsWith("55") ? numero : `55${numero}`}?text=${encodeURIComponent(texto)}`
+    const analise = analisarTelefone(credenciais.telefone);
+    if (credenciais.telefone && !analise.ok) {
+      setErro(
+        `O WhatsApp do professor está com número inválido (“${credenciais.telefone}”): ${analise.motivo} Corrija o cadastro e tente novamente.`,
+      );
+      return;
+    }
+    const link = analise.ok
+      ? `https://wa.me/${analise.numero}?text=${encodeURIComponent(texto)}`
       : `https://wa.me/?text=${encodeURIComponent(texto)}`;
     globalThis.open(link, "_blank", "noopener,noreferrer");
   }
@@ -512,6 +519,14 @@ export function ProfessorManager({ professores }: { professores: ProfessorItem[]
                             {[p.disciplina, p.turmas, p.telefone].filter(Boolean).join(" · ") ||
                               "Sem dados complementares"}
                           </p>
+                          {p.telefone && !analisarTelefone(p.telefone).ok ? (
+                            <p className="mt-0.5 text-[10px] font-semibold text-rose-600">
+                              ⚠ Telefone inválido:{" "}
+                              {!analisarTelefone(p.telefone).ok
+                                ? (analisarTelefone(p.telefone) as { motivo: string }).motivo
+                                : ""}
+                            </p>
+                          ) : null}
                           <p className="mt-0.5 text-[11px] text-slate-500">
                             {p.email ? (
                               <>Login: <span className="font-mono">{p.email}</span></>

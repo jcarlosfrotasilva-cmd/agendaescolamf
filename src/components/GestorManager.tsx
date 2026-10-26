@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { CARGOS, cargoInfo } from "@/lib/constants";
+import { analisarTelefone } from "@/lib/telefone";
 import { Field, inputClass, selectClass } from "./ui";
 
 export type GestorItem = {
@@ -204,6 +205,14 @@ export function GestorManager({ gestores }: { gestores: GestorItem[] }) {
                           {[g.email, g.telefone, g.escola].filter(Boolean).join(" · ") ||
                             "Sem dados de contato"}
                         </p>
+                        {g.telefone && !analisarTelefone(g.telefone).ok ? (
+                          <p className="mt-0.5 text-[10px] font-semibold text-rose-600">
+                            ⚠ Telefone inválido:{" "}
+                            {!analisarTelefone(g.telefone).ok
+                              ? (analisarTelefone(g.telefone) as { motivo: string }).motivo
+                              : ""}
+                          </p>
+                        ) : null}
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">

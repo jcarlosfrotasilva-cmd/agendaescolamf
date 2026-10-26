@@ -159,15 +159,15 @@ export default async function AgendaProfessorPage({
       </div>
 
       {proximo ? (
-        <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950 p-5 text-white shadow-xl">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-teal-50 via-white to-indigo-50 p-5 shadow-sm ring-1 ring-slate-200">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div className="min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-emerald-300">
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-teal-700">
                 Próximo compromisso do professor
               </p>
-              <h2 className="mt-1 text-lg font-semibold tracking-tight">{proximo.titulo}</h2>
-              <p className="mt-1 text-sm text-slate-300">{proximo.assunto}</p>
-              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-slate-300">
+              <h2 className="mt-1 text-lg font-semibold tracking-tight text-slate-900">{proximo.titulo}</h2>
+              <p className="mt-1 text-sm text-slate-600">{proximo.assunto}</p>
+              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-slate-600">
                 <span>🗓️ {labelDiaCurto(proximo.dataInicio)} · {proximo.horaInicio} às {proximo.horaFim}</span>
                 <span>📍 {proximo.local}</span>
                 <span>👥 {proximo.participantes ?? "Equipe escolar"}</span>

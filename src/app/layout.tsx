@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { AlarmCenter } from "@/components/AlarmCenter";
+import { ScriptTema } from "@/components/SeletorTema";
 import { Shell } from "@/components/Shell";
 import { getSessao } from "@/lib/auth";
 import { ESCOLA } from "@/lib/escola";
@@ -19,18 +20,24 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const sessao = await getSessao();
   return (
-    <html lang="pt-BR">
-      <body className="text-slate-900 antialiased">
-        <Shell
-          usuario={
-            sessao
-              ? { nome: sessao.nome, email: sessao.email, papel: sessao.papel }
-              : null
-          }
-        >
-          {children}
-        </Shell>
-        {sessao ? <AlarmCenter /> : null}
+    <html lang="pt-BR" data-tema="nevoa" suppressHydrationWarning>
+      <head>
+        <ScriptTema />
+      </head>
+      <body className="antialiased">
+        {sessao ? (
+          <>
+            <Shell
+              usuario={{ nome: sessao.nome, email: sessao.email, papel: sessao.papel }}
+            >
+              {children}
+            </Shell>
+            <AlarmCenter />
+          </>
+        ) : (
+          // Telas públicas (acesso, diagnóstico, configuração) sem barra lateral.
+          children
+        )}
       </body>
     </html>
   );

@@ -110,10 +110,10 @@ export default async function MensagensPage({ searchParams }: { searchParams: Se
             Avisar sobre próximos compromissos
           </Link>
           <Link
-            href="/configuracao"
-            className="rounded-xl bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 ring-1 ring-slate-300 transition hover:bg-slate-50"
+            href="/whatsapp/configurar"
+            className="rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-emerald-700"
           >
-            Configurar envio automático
+            ⚙ Ativar envio automático
           </Link>
         </div>
       </header>

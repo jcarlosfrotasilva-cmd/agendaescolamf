@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { analisarTelefone } from "./telefone";
 import {
   CARGO_KEYS,
   ORIGEM_KEYS,
@@ -7,6 +8,21 @@ import {
   TIPO_KEYS,
   TURNO_KEYS,
 } from "./constants";
+
+/** Validação reutilizável de telefone (mensagem explicativa em português). */
+const telefoneOpcional = z
+  .string()
+  .trim()
+  .max(40)
+  .optional()
+  .or(z.literal(""))
+  .superRefine((valor, ctx) => {
+    if (!valor) return;
+    const analise = analisarTelefone(valor);
+    if (!analise.ok) {
+      ctx.addIssue({ code: "custom", message: `Telefone inválido: ${analise.motivo}` });
+    }
+  });
 
 const horaRegex = /^([01]\d|2[0-3]):[0-5]\d$/;
 export const horaSchema = z
@@ -59,7 +75,7 @@ export const gestorSchema = z.object({
   nome: z.string().trim().min(3, "Informe o nome completo").max(140),
   cargo: z.enum(CARGO_KEYS),
   email: z.string().trim().email("E-mail inválido").optional().or(z.literal("")),
-  telefone: z.string().trim().max(40).optional().or(z.literal("")),
+  telefone: telefoneOpcional,
   escola: z.string().trim().max(160).optional().or(z.literal("")),
   ativo: z.coerce.boolean().default(true),
 });
@@ -72,7 +88,7 @@ export const professorSchema = z.object({
   turmas: z.string().trim().max(200).optional().or(z.literal("")),
   turno: z.enum(TURNO_KEYS).default("MANHA"),
   email: z.string().trim().email("E-mail inválido").optional().or(z.literal("")),
-  telefone: z.string().trim().max(40).optional().or(z.literal("")),
+  telefone: telefoneOpcional,
   observacoes: z.string().trim().max(600).optional().or(z.literal("")),
   ativo: z.coerce.boolean().default(true),
 });

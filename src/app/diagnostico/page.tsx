@@ -53,22 +53,22 @@ export default async function DiagnosticoPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950 px-4 py-8 text-white sm:px-8">
+    <div className="min-h-screen">
+      <header className="border-b border-slate-200 bg-gradient-to-br from-indigo-50 via-white to-teal-50 px-4 py-8 sm:px-8">
         <div className="mx-auto max-w-[900px]">
           <div className="flex items-center gap-3">
             <span className="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-indigo-400 to-emerald-400 text-[10px] font-bold text-slate-900">
               {ESCOLA.sigla}
             </span>
             <div>
-              <p className="text-xs font-semibold">{ESCOLA.nome}</p>
-              <p className="text-[11px] text-slate-400">Diagnóstico da instalação</p>
+              <p className="text-xs font-semibold text-slate-900">{ESCOLA.nome}</p>
+              <p className="text-[11px] text-slate-500">Diagnóstico da instalação</p>
             </div>
           </div>
-          <h1 className="mt-5 text-2xl font-semibold tracking-tight">
+          <h1 className="mt-5 text-2xl font-semibold tracking-tight text-slate-900">
             {pronto ? "Sistema conectado e pronto" : "Encontramos um problema na conexão"}
           </h1>
-          <p className="mt-1 max-w-2xl text-sm text-slate-300">
+          <p className="mt-1 max-w-2xl text-sm text-slate-600">
             Esta página não exige login. Use-a quando a tela de acesso apresentar erro para descobrir
             qual é a causa e como corrigir.
           </p>
